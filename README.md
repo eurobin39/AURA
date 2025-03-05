@@ -5,5 +5,7 @@ An AI-driven productivity assistant that enhances focus by analyzing facial expr
 #TEAM 
 
 Euro Bae - eurobin39@gmail.com
+
 Artem  - 
+
 Zicheng liang - 
