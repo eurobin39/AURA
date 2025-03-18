@@ -2,3 +2,5 @@ requests
 opencv-python
 azure-ai-vision-face
 python-dotenv
+
+pip3 install requests opencv-python azure-ai-vision-face python-dotenv
