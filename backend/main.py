@@ -58,11 +58,16 @@ def estimate_efficiency(faces):
 
 # Test loop
 if __name__ == "__main__":
-    image_path = "face_euro.jpg"
-    # Run the analysis 3 times for testing
-    for _ in range(3):
-        print(f"\n🔍 Analyzing: {image_path}")
-        faces = analyze_face(image_path)
-        estimate_efficiency(faces)
-        # Wait 2 seconds between iterations
-        time.sleep(2)
+    image_folder = "test_images"  # Folder containing test images
+    # Get all image files in the folder
+    image_files = [f for f in os.listdir(image_folder) if f.endswith(('jpg', 'jpeg', 'png'))]
+
+    # Run the analysis for each image 3 times for testing
+    for image_name in image_files:
+        image_path = os.path.join(image_folder, image_name)
+        for _ in range(3):
+            print(f"\n🔍 Analyzing: {image_path}")
+            faces = analyze_face(image_path)
+            estimate_efficiency(faces)
+            # Wait 2 seconds between iterations
+            time.sleep(2)
