@@ -4,7 +4,8 @@ import time
 import cv2
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+
+# 환경 변수 로드
 load_dotenv()
 
 API_KEY = os.getenv("FACE_APIKEY")
@@ -13,118 +14,93 @@ ENDPOINT = os.getenv("FACE_API_ENDPOINT")
 BACKEND_URL = "http://127.0.0.1:5001"
 face_api_url = f"{ENDPOINT}/face/v1.0/detect"
 
-# Set headers for the API request
+# API 요청 설정
 headers = {"Ocp-Apim-Subscription-Key": API_KEY, "Content-Type": "application/octet-stream"}
-# Define parameters for face detection and attributes to return
-params = {"returnFaceAttributes": "headPose,blur,exposure,occlusion", "detectionModel": "detection_01"}
-
+params = {
+    "returnFaceAttributes": "headPose,blur,exposure,occlusion,emotion",  # emotion 추가
+    "detectionModel": "detection_01"
+}
 
 def analyze_face(image_path):
-    """Analyze the image using Azure Face API and return detected faces."""
+    """Azure Face API로 이미지 분석"""
     try:
         with open(image_path, "rb") as image_file:
             response = requests.post(face_api_url, headers=headers, params=params, data=image_file)
-
-        if response.status_code != 200:
-            print(f"❌ API Error: {response.status_code} - {response.text}")
+        
+        if response.status_code == 200:
+            faces = response.json()
+            return faces if faces else None
+        else:
+            print(f"❌ API 오류: {response.status_code} - {response.text}")
             return None
-
-        faces = response.json()
-        return faces if faces else None
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"❌ 오류 발생: {str(e)}")
         return None
 
-
-def estimate_efficiency(faces, image_name=""):
-    """Estimate focus and fatigue based on face attributes and send data to backend."""
+def estimate_efficiency(faces):
+    """업무 효율성 분석"""
     if not faces:
-        print("⚠️ No face detected → Efficiency unknown")
-        return None
+        return {
+            "efficiency_score": 0,
+            "details": "No face detected",
+            "focus": "N/A",
+            "fatigue": "N/A",
+            "emotion": "N/A"
+        }
 
+    # 첫 번째 얼굴 데이터 사용
     face = faces[0]
     attributes = face.get("faceAttributes", {})
+
+    # 1. 초점(Focus) 계산: 머리 자세(headPose) 기반
     head_pose = attributes.get("headPose", {})
-
     yaw, pitch = head_pose.get("yaw", 0), head_pose.get("pitch", 0)
-    blur = attributes.get("blur", {}).get("value", 0)
-    eye_occluded = attributes.get("occlusion", {}).get("eyeOccluded", False)
+    focus_score = 100 - (abs(yaw) + abs(pitch))  # 회전이 적을수록 초점 높음
+    focus_score = max(0, min(100, focus_score))  # 0~100 범위로 제한
 
-    focus_score = max(0, 100 - (abs(yaw) + abs(pitch)))
-
-    print(f"🎯 Focus Score: {focus_score:.1f}% (Yaw={yaw}, Pitch={pitch})")
+    # 2. 피로도(Fatigue) 추정: 눈 가림, 흐림도 활용
+    occlusion = attributes.get("occlusion", {})
+    blur = attributes.get("blur", {})
+    eye_occluded = occlusion.get("eyeOccluded", False)
+    blur_level = blur.get("value", "Low")  # Low, Medium, High
+    fatigue_score = 0
     if eye_occluded:
-        print("⚠️ Eyes occluded → Possible fatigue")
+        fatigue_score += 50  # 눈 가림 시 피로도 증가
+    if blur_level == "High":
+        fatigue_score += 30  # 흐림이 심하면 피로 가능성
+    fatigue_score = min(100, fatigue_score)
 
-    # Prepare data to send to backend
-    face_data = {
-        "image_name": image_name,
-        "focus_score": focus_score,
-        "yaw": yaw,
-        "pitch": pitch,
-        "blur": blur,
-        "eye_occluded": eye_occluded
+    # 3. 감정(Emotion) 분석: 긍정적 감정은 효율성에 기여
+    emotion = attributes.get("emotion", {})
+    positive_emotion = emotion.get("happiness", 0) + emotion.get("neutral", 0)
+    negative_emotion = emotion.get("sadness", 0) + emotion.get("anger", 0) + emotion.get("fear", 0)
+    emotion_factor = positive_emotion - negative_emotion  # -1 ~ 1 사이 값
+    emotion_factor = max(-1, min(1, emotion_factor)) * 20  # -20 ~ 20 점수화
+
+    # 4. 종합 효율성 점수 계산
+    efficiency_score = (focus_score * 0.5) - (fatigue_score * 0.3) + emotion_factor
+    efficiency_score = max(0, min(100, efficiency_score))  # 0~100으로 제한
+
+    # 결과 반환
+    return {
+        "efficiency_score": round(efficiency_score, 1),
+        "details": {
+            "focus": f"{focus_score:.1f}% (Yaw: {yaw}, Pitch: {pitch})",
+            "fatigue": f"{fatigue_score}% (Eyes occluded: {eye_occluded}, Blur: {blur_level})",
+            "emotion": f"Positive: {positive_emotion:.2f}, Negative: {negative_emotion:.2f}"
+        }
     }
 
-    send_to_backend(face_data)
-    return face_data
-
-
-def send_to_backend(data):
-    """Send analyzed face data to the backend."""
-    try:
-        response = requests.post(f"{BACKEND_URL}/face-analysis", json=data)
-
-        if response.status_code == 200:
-            print("✅ Data successfully sent to backend!")
-        else:
-            print(f"❌ Backend Error: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"❌ Failed to send data to backend: {str(e)}")
-
-
-cap = cv2.VideoCapture(0)
-frame_skip = 500  # Process every 500th frame
-
-if not cap.isOpened():
-    print("Error: Could not open webcam.")
-    exit()
-
-frame_count = 0
-
-try:
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to capture frame")
-            break
-
-        frame_count += 1
-        if frame_count % frame_skip == 0:
-            image_path = "temp_frame.jpg"
-            cv2.imwrite(image_path, frame)
-            print("\n🔍 Sending frame to Azure Face API...")
-
-            faces = analyze_face(image_path)
-            estimate_efficiency(faces, image_name=image_path)
-
-        cv2.imshow("Webcam Feed", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-finally:
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-# Test loop for processing test images
 if __name__ == "__main__":
-    image_folder = "test_images"
-    image_files = [f for f in os.listdir(image_folder) if f.endswith(('jpg', 'jpeg', 'png'))]
-
-    for image_name in image_files:
-        image_path = os.path.join(image_folder, image_name)
-        for _ in range(3):
-            print(f"\n🔍 Analyzing: {image_path}")
-            faces = analyze_face(image_path)
-            estimate_efficiency(faces, image_name=image_name)
-            time.sleep(2)
+    image_path = "face_euro.jpg"  # 테스트 이미지 경로
+    print(f"🔍 분석 시작: {image_path}")
+    faces = analyze_face(image_path)
+    
+    if faces:
+        result = estimate_efficiency(faces)
+        print(f"📊 업무 효율성 점수: {result['efficiency_score']}%")
+        print("세부 정보:")
+        for key, value in result["details"].items():
+            print(f"  {key}: {value}")
+    else:
+        print("⚠️ 분석 실패: 얼굴 데이터 없음")

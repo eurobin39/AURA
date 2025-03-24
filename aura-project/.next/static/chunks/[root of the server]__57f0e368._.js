@@ -7422,7 +7422,7 @@ class Router {
                     });
                     return new Promise(()=>{});
                 }
-                const routerFilterSValue = ("TURBOPACK compile-time value", JSON.parse('{"numItems":4,"errorRate":0.0001,"numBits":77,"numHashes":14,"bitArray":[1,0,1,0,0,0,0,0,0,1,1,0,0,1,1,0,1,0,0,0,1,1,1,1,0,1,0,1,0,0,0,0,0,1,1,1,0,1,1,0,0,0,0,1,0,1,0,0,1,0,1,0,1,1,1,0,1,1,1,1,0,1,0,1,1,0,0,1,1,1,1,1,0,0,1,0,1]}'));
+                const routerFilterSValue = ("TURBOPACK compile-time value", JSON.parse('{"numItems":0,"errorRate":0.0001,"numBits":0,"numHashes":null,"bitArray":[]}'));
                 if (!staticFilterData && routerFilterSValue) {
                     staticFilterData = routerFilterSValue ? routerFilterSValue : undefined;
                 }
