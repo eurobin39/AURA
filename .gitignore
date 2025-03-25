@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+node_modules/
+*.pt
+__pycache__/
+backend/venv
+.env
+*.jpg
+=======
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -45,3 +53,4 @@ next-env.d.ts
 
 #images
 temp_frame.jpg
+>>>>>>> 0a6a29f01f8bf109f70275b4e1fecf98232bf891

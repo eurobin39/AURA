@@ -1,0 +1,6 @@
+requests 
+opencv-python
+azure-ai-vision-face
+python-dotenv
+azure-storage-blob
+flask
