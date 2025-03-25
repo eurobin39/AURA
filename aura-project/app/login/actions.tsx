@@ -52,7 +52,6 @@ export async function login(prevState: any, formData: FormData) {
             select: {
                 id: true,
                 password: true,
-                role: true,
             },
         });
 
@@ -63,36 +62,8 @@ export async function login(prevState: any, formData: FormData) {
             session.id = user?.id;
             await session.save();
             console.log("User authenticated, redirecting...");
-
-            // Check if user's role is still pending
-            if (user?.role === "Pending") {
-                redirect("/pending-approval");
-            }
-
-            // Role redirection
-            switch (user?.role) {
-                case "Admin":
-                    redirect("/dashboard/admin");
-                    break;
-                case "Security Engineer":
-                    redirect("/dashboard/security");
-                    break;
-                case "Software Engineer":
-                    redirect("/dashboard/software");
-                    break;
-                case "Manager":
-                    redirect("/dashboard/manager");
-                    break;
-                default:
-                    redirect("/home");
-            }
-        } else {
-            return {
-                fieldErrors: {
-                    password: ["Wrong password!"],
-                    email: [],
-                },
-            };
+        
+            redirect("/home/dopple");
         }
     }
 }
