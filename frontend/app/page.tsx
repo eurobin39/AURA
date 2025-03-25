@@ -9,7 +9,7 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 to-gray-800 text-white flex flex-col items-center justify-center px-8 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-800 to-gray-700 text-white flex flex-col items-center justify-center px-8 py-12">
       <Head>
         <title>AURA - AI Productivity Assistant</title>
       </Head>
