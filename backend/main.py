@@ -57,16 +57,12 @@ def estimate_efficiency(faces, image_name=""):
     eye_occluded = attributes.get("occlusion", {}).get("eyeOccluded", False)
 
     # Calculate deviation of head position parameters (ignore the deviation within range -5 to 5)
-    yaw_deviation = abs(yaw)
-    if(yaw_deviation > 5):
-        yaw_deviation = 0
-    pitch_deviation = abs(yaw)
-    if(pitch_deviation > 5):
-        pitch_deviation = 0   
-    total_deviation = sqrt(yaw_deviation*yaw_deviation + pitch_deviation*pitch_deviation)
+    yaw_deviation = abs(yaw) if abs(yaw) > 5 else 0
+    pitch_deviation = abs(pitch) if abs(pitch) > 5 else 0
+    total_deviation = sqrt(yaw_deviation**2 + pitch_deviation**2)
 
     # Calculate centrality penalty
-    centrality_penalty = total_deviation * 2 # Deviation from (0,0) reduces focus
+    centrality_penalty = total_deviation * 2  # Deviation from (0,0) reduces focus
 
     # If this is the first frame, use only the head position for focus score
     if previous_yaw is None or previous_pitch is None:
@@ -75,9 +71,11 @@ def estimate_efficiency(faces, image_name=""):
         # Calculate head movement from the last frame
         yaw_change = abs(yaw - previous_yaw)
         pitch_change = abs(pitch - previous_pitch)    
-        position_change = sqrt(yaw_change*yaw_change + pitch_change*pitch_change)
+        position_change = sqrt(yaw_change**2 + pitch_change**2)
+
         # Calculate movement penalty
         movement_penalty = position_change * 3  # More movement = lower focus
+
         # Calculate focus score (movement + centrality penalty)
         focus_score = max(0, 100 - movement_penalty - centrality_penalty)
 
