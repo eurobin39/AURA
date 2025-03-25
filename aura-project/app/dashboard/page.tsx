@@ -27,48 +27,94 @@ export default function FocusStatsPage() {
         console.error("Failed to fetch focus logs:", err);
       }
     };
-  
+
     fetchLogs();
     const interval = setInterval(fetchLogs, 60000);
     return () => clearInterval(interval);
   }, []);
-  
+
+  const latest = logs[logs.length - 1];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-8">
       <h1 className="text-3xl font-bold mb-6">🧠 Focus Tracking Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Focus Score Chart */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-2">📈 Focus Score</h2>
-            <ResponsiveContainer width="100%" height={250}>
+            <h2 className="text-xl font-semibold mb-4">📈 Focus Score Trend</h2>
+            <ResponsiveContainer width="100%" height={300}>
               <LineChart data={logs}>
-                <XAxis dataKey="timestamp" stroke="#ccc" />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="#ccc"
+                  tickFormatter={(timeStr) => {
+                    const date = new Date(timeStr);
+                    return date.toLocaleTimeString();
+                  }}
+                />
                 <YAxis domain={[0, 100]} stroke="#ccc" />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(label) => {
+                    const date = new Date(label);
+                    return date.toLocaleTimeString();
+                  }}
+                />
                 <Line type="monotone" dataKey="focusScore" stroke="#38bdf8" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4">📊 Latest Session Summary</h2>
-            {logs.length > 0 ? (
-              <div className="space-y-2 text-sm">
-                <p><strong>Time:</strong> {new Date(logs[logs.length - 1].timestamp).toLocaleTimeString()}</p>
-                <p><strong>Keyboard Inputs:</strong> {logs[logs.length - 1].keyboard}</p>
-                <p><strong>Mouse Clicks:</strong> {logs[logs.length - 1].mouseClicks}</p>
-                <p><strong>Mouse Distance:</strong> {logs[logs.length - 1].mouseDistance} px</p>
-                <p><strong>Focus Score:</strong> <Badge>{logs[logs.length - 1].focusScore} / 100</Badge></p>
-              </div>
-            ) : (
-              <p>Waiting for first log...</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Summary Section */}
+        <div className="flex flex-col space-y-4">
+          <h2 className="text-xl font-semibold">📊 Latest Session Summary</h2>
+
+          {latest ? (
+            <>
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-slate-300">🕒 Time</p>
+                  <p className="text-lg font-semibold">{new Date(latest.timestamp).toLocaleTimeString()}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-slate-300">⌨️ Keyboard Inputs</p>
+                  <p className="text-lg font-semibold">{latest.keyboard}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-slate-300">🖱 Mouse Clicks</p>
+                  <p className="text-lg font-semibold">{latest.mouseClicks}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm text-slate-300">📐 Mouse Distance</p>
+                  <p className="text-lg font-semibold">{latest.mouseDistance} px</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-300">📈 Focus Score</p>
+                    <p className="text-lg font-semibold">{latest.focusScore} / 100</p>
+                  </div>
+                  <Badge>{latest.focusScore >= 60 ? "✅ Good" : "⚠ Low"}</Badge>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <p>Waiting for first log...</p>
+          )}
+        </div>
       </div>
     </div>
   );
