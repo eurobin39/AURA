@@ -1,3 +1,4 @@
+from math import sqrt
 import os
 import requests
 import time
@@ -36,8 +37,13 @@ def analyze_face(image_path):
         return None
 
 
+# Initialize previous head position globally
+previous_yaw, previous_pitch = None, None
+
 def estimate_efficiency(faces, image_name=""):
     """Estimate focus and fatigue based on face attributes and send data to backend."""
+    global previous_yaw, previous_pitch
+
     if not faces:
         print("⚠️ No face detected → Efficiency unknown")
         return None
@@ -50,7 +56,33 @@ def estimate_efficiency(faces, image_name=""):
     blur = attributes.get("blur", {}).get("value", 0)
     eye_occluded = attributes.get("occlusion", {}).get("eyeOccluded", False)
 
-    focus_score = max(0, 100 - (abs(yaw) + abs(pitch)))
+    # Calculate deviation of head position parameters (ignore the deviation within range -5 to 5)
+    yaw_deviation = abs(yaw)
+    if(yaw_deviation > 5):
+        yaw_deviation = 0
+    pitch_deviation = abs(yaw)
+    if(pitch_deviation > 5):
+        pitch_deviation = 0   
+    total_deviation = sqrt(yaw_deviation*yaw_deviation + pitch_deviation*pitch_deviation)
+
+    # Calculate centrality penalty
+    centrality_penalty = total_deviation * 2 # Deviation from (0,0) reduces focus
+
+    # If this is the first frame, use only the head position for focus score
+    if previous_yaw is None or previous_pitch is None:
+        focus_score = max(0, 100 - centrality_penalty)  # Only centrality penalty
+    else:
+        # Calculate head movement from the last frame
+        yaw_change = abs(yaw - previous_yaw)
+        pitch_change = abs(pitch - previous_pitch)    
+        position_change = sqrt(yaw_change*yaw_change + pitch_change*pitch_change)
+        # Calculate movement penalty
+        movement_penalty = position_change * 3  # More movement = lower focus
+        # Calculate focus score (movement + centrality penalty)
+        focus_score = max(0, 100 - movement_penalty - centrality_penalty)
+
+    # Update previous head position
+    previous_yaw, previous_pitch = yaw, pitch
 
     print(f"🎯 Focus Score: {focus_score:.1f}% (Yaw={yaw}, Pitch={pitch})")
     if eye_occluded:
@@ -69,7 +101,6 @@ def estimate_efficiency(faces, image_name=""):
     send_to_backend(face_data)
     return face_data
 
-
 def send_to_backend(data):
     """Send analyzed face data to the backend."""
     try:
@@ -84,7 +115,7 @@ def send_to_backend(data):
 
 
 cap = cv2.VideoCapture(0)
-frame_skip = 500  # Process every 500th frame
+frame_skip = 300  # Process every 300th frame
 
 if not cap.isOpened():
     print("Error: Could not open webcam.")
