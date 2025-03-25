@@ -18,5 +18,18 @@ model User {
   email    String @unique
   username String @unique
   password String
-  role     String
+  focusLogs FocusLog[] @relation("UserFocusLogs")
 }
+
+model FocusLog {
+  id            Int      @id @default(autoincrement())
+  timestamp     DateTime @default(now())
+  keyboard      Int
+  mouseClicks   Int
+  mouseDistance Int
+  focusScore    Float
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], name: "UserFocusLogs")
+}
+
+
