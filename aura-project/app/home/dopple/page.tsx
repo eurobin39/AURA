@@ -9,8 +9,43 @@ import Link from "next/link";
 const WorkEfficiencyPage = () => {
   const weeklyScoreChartRef = useRef<HTMLCanvasElement>(null);
   const [focusScore, setFocusScore] = useState(78); // Demo data
+  const [focusLogs, setFocusLogs] = useState<{ keyboard: number; mouseClicks: number; focusScore: number }[]>([
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+    { keyboard: 0, mouseClicks: 0, focusScore: 0 },
+  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch focus logs from API
+  useEffect(() => {
+    const fetchFocusLogs = async () => {
+      try {
+        const res = await fetch("/api/focus-log");
+        if (!res.ok) throw new Error("Failed to fetch focus logs");
+
+        const data = await res.json();
+        setFocusLogs(data);
+      } catch (err: any) {
+        console.error("❌ Error fetching focus logs:", err);
+        setError("Could not load focus data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFocusLogs();
+  }, []);
+
+  console.log(focusLogs);
 
   useEffect(() => {
+    const weeklyScores = focusLogs.slice(0, 7).map(log => log.focusScore) || [0, 0, 0, 0, 0, 0, 0];
+  
     const weeklyScoreChart = new Chart(weeklyScoreChartRef.current!, {
       type: "bar",
       data: {
@@ -18,10 +53,10 @@ const WorkEfficiencyPage = () => {
         datasets: [
           {
             label: "Weekly Focus Score",
-            data: [65, 72, 80, 68, 85, 60, 78], // 1주일 스코어 예시 데이터
+            data: weeklyScores, // Use the latest weeklyScores
             backgroundColor: "#60a5fa",
             borderRadius: 4,
-            barThickness: 16, // 바 두께를 얇게 설정
+            barThickness: 16,
           },
         ],
       },
@@ -38,11 +73,11 @@ const WorkEfficiencyPage = () => {
         },
       },
     });
-
+  
     return () => {
       weeklyScoreChart.destroy();
     };
-  }, []);
+  }, [focusLogs]);
 
   const auraAnimationSpeed = 5 - Math.min(focusScore / 25, 4); // FocusCoachPage 스타일 반영
 
