@@ -56,15 +56,33 @@ export class AuraAIService {
     );
     
     try {
-      return JSON.parse(response.choices[0].text);
+      const aiResponse = JSON.parse(response.choices[0].text);
+      
+      // Format response to match FocusInsight schema
+      return {
+        summary: aiResponse.analysis,
+        score: this.calculateInsightScore(activityData),
+        date: new Date(),
+        // These fields will be filled by the database layer
+        userId: undefined,
+        workSessionId: undefined
+      };
     } catch (e) {
       console.error("Failed to parse AI response", e);
       return {
-        analysis: "Unable to analyze work session.",
-        tips: ["Take regular breaks", "Stay hydrated", "Minimize distractions"],
-        insight: "Consider tracking more data for better insights."
+        summary: "Unable to analyze work session.",
+        score: 0,
+        date: new Date()
       };
     }
+  }
+
+  // Add helper method to calculate insight score
+  private calculateInsightScore(data: { keystrokes: number, clicks: number, mouseMoved: number }): number {
+    const keyScore = Math.min(data.keystrokes / 300, 1.0) * 0.5;
+    const clickScore = Math.min(data.clicks / 100, 1.0) * 0.2;
+    const moveScore = Math.min(data.mouseMoved / 5000, 1.0) * 0.3;
+    return Math.round((keyScore + clickScore + moveScore) * 100);
   }
 }
 

@@ -18,6 +18,51 @@ export class SessionTracker {
     return SessionTracker.instance;
   }
   
+  // Get active session for a user
+  async getActiveSession(userId: number): Promise<any> {
+    if (this.activeSession && this.activeSession.userId === userId) {
+      return this.activeSession;
+    }
+    
+    // Try to find an active session in the database
+    const activeSession = await db.workSession.findFirst({
+      where: {
+        userId,
+        endTime: null
+      }
+    });
+    
+    if (activeSession) {
+      this.activeSession = activeSession;
+      // Restore counters from the most recent focus log
+      const focusLog = await db.focusLog.findFirst({
+        where: { userId: activeSession.userId },
+        orderBy: { timestamp: 'desc' }
+      });
+      
+      if (focusLog) {
+        this.keyCount = focusLog.keyboard;
+        this.clickCount = focusLog.mouseClicks;
+        this.mouseDistance = focusLog.mouseDistance;
+      }
+    }
+    
+    return activeSession;
+  }
+  
+  // Persist current session state
+  async persistSessionState(): Promise<void> {
+    if (!this.activeSession) return;
+    
+    await db.workSession.update({
+      where: { id: this.activeSession.id },
+      data: {
+        lastActive: new Date(),
+        activeApps: Array.from(this.activeApps)
+      }
+    });
+  }
+  
   // Start a new work session
   async startSession(userId: number): Promise<any> {
     if (this.activeSession) {
@@ -52,25 +97,34 @@ export class SessionTracker {
   async endSession(): Promise<any> {
     if (!this.activeSession) return null;
     
-    // Update only the fields that we know exist in the schema
+    // Update work session
     const updatedSession = await db.workSession.update({
       where: { id: this.activeSession.id },
       data: {
         endTime: new Date(),
         activeApps: Array.from(this.activeApps)
-        // Removed fields that might not be in the schema:
-        // keystrokes, mouseClicks, mouseDistance, focusScore
       }
     });
-    
+
+    // Create focus log entry for the metrics
+    const focusLog = await db.focusLog.create({
+      data: {
+        userId: updatedSession.userId,
+        keyboard: this.keyCount,
+        mouseClicks: this.clickCount,
+        mouseDistance: this.mouseDistance,
+        focusScore: this.calculateFocusScore()
+      }
+    });
+
     // Get AI-generated insights
     const aiInsights = await this.generateInsights(updatedSession);
     
-    // Reset the active session
     this.activeSession = null;
     
     return {
       session: updatedSession,
+      focusLog: focusLog,
       insights: aiInsights
     };
   }
@@ -117,7 +171,6 @@ export class SessionTracker {
       
       const timeOfDay = this.getTimeOfDay(session.startTime);
       
-      // Get insights from Azure OpenAI
       const aiResponse = await aiService.generateFocusInsights({
         keystrokes: this.keyCount,
         clicks: this.clickCount,
@@ -127,25 +180,14 @@ export class SessionTracker {
         timeOfDay
       });
       
-      // Skip database insertion for now to avoid schema mismatch issues
-      // Return the AI insights directly instead
-      return {
-        analysis: aiResponse.analysis,
-        tips: aiResponse.tips,
-        insight: aiResponse.insight,
-        focusScore: this.calculateFocusScore(),
-        date: new Date()
-      };
-      
-      // NOTE: Uncomment and fix this once the Prisma schema and TypeScript definitions are in sync
-      /*
-      const insight = await db.focusInsight.create({
+      // Create FocusInsight in database
+      return await db.focusInsight.create({
         data: {
-          // Add the correct fields based on your schema
+          ...aiResponse,
+          userId: session.userId,
+          workSessionId: session.id
         }
       });
-      return insight;
-      */
     } catch (error) {
       console.error("Failed to generate insights:", error);
       return null;
@@ -172,3 +214,36 @@ export class SessionTracker {
 }
 
 export const sessionTracker = SessionTracker.getInstance();
+
+// Create a new store using Zustand or similar
+interface SessionStore {
+  isSessionActive: boolean;
+  sessionStart: Date | null;
+  setSessionActive: (active: boolean) => void;
+  setSessionStart: (start: Date | null) => void;
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    // Page is hidden, but don't end session
+    console.log('Page hidden, session continues');
+  } else {
+    // Page is visible again, sync with server state
+    syncSessionState();
+  }
+};
+
+// Add syncSessionState function
+async function syncSessionState() {
+  try {
+    const response = await fetch('/api/focus-sessions/status');
+    const data = await response.json();
+    
+    if (!data.isActive) {
+      // Reset session state if no active session on server
+      sessionTracker['activeSession'] = null;
+    }
+  } catch (error) {
+    console.error('Failed to sync session state:', error);
+  }
+}

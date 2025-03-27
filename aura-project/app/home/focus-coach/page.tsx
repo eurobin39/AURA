@@ -4,10 +4,18 @@ import { useState, useEffect } from 'react';
 import { Clock, Play, Square, BarChart2, History } from 'lucide-react';
 import ActivityTracker from '@/components/ActivityTracker';
 import FocusCoach from '@/components/FocusCoach';
+import { useSessionStore } from '@/lib/session-store';
 
 export default function FocusCoachPage() {
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const [sessionStart, setSessionStart] = useState<Date | null>(null);
+  const { 
+    isSessionActive, 
+    sessionStart, 
+    setSessionActive, 
+    setSessionStart, 
+    setSessionId,
+    resetSession 
+  } = useSessionStore();
+  
   const [elapsedTime, setElapsedTime] = useState(0);
   const [latestInsight, setLatestInsight] = useState(null);
   const [sessionHistory, setSessionHistory] = useState([]);
@@ -22,8 +30,10 @@ export default function FocusCoachPage() {
       });
       
       if (response.ok) {
-        setIsSessionActive(true);
+        const data = await response.json();
+        setSessionActive(true);
         setSessionStart(new Date());
+        setSessionId(data.sessionId);
         setElapsedTime(0);
       } else {
         console.error('Failed to start session');
@@ -46,8 +56,7 @@ export default function FocusCoachPage() {
       if (response.ok) {
         const data = await response.json();
         setLatestInsight(data.insights);
-        setIsSessionActive(false);
-        setSessionStart(null);
+        resetSession();
         
         // Refresh history
         fetchSessionHistory();

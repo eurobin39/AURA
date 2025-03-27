@@ -19,6 +19,8 @@ frontend/node_modules
 /out/
 frontend/.next
 
+# IDE
+.cursor/
 
 # production
 /build
