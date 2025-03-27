@@ -62,14 +62,8 @@ export async function login(prevState: any, formData: FormData) {
             session.id = user?.id;
             await session.save();
             console.log("User authenticated, redirecting...");
+        
             redirect("/home");
-        } else {
-            return {
-                fieldErrors: {
-                    password: ["Wrong password!"],
-                    email: [],
-                },
-            };
         }
     }
 }

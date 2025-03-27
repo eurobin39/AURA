@@ -171,6 +171,7 @@ export class SessionTracker {
       
       const timeOfDay = this.getTimeOfDay(session.startTime);
       
+      // Get insights from Azure OpenAI
       const aiResponse = await aiService.generateFocusInsights({
         keystrokes: this.keyCount,
         clicks: this.clickCount,

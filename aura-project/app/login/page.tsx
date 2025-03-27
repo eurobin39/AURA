@@ -6,7 +6,7 @@ export default async function LoginPage() {
   const session = await getSession();
 
   if (session?.id) {
-    redirect("/home/dopple"); 
+    redirect("/home"); 
   }
 
   return <Login />; 

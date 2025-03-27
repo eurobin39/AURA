@@ -12,9 +12,12 @@ model User {
   email      String        @unique
   username   String        @unique
   password   String
-  FocusLog   FocusLog[]
+  focusLogs FocusLog[] @relation("UserFocusLogs")
   WorkSession WorkSession[]
   FocusInsight FocusInsight[]
+  FaceFocusLog FaceFocusLog[] @relation("FaceFocusLogs")
+  lowFocusAlert    Boolean @default(true)
+  feedbackInterval Int     @default(60) // in minutes
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }
@@ -38,6 +41,27 @@ model WorkSession {
   userId      Int
   User        User          @relation(fields: [userId], references: [id])
   insights    FocusInsight[]
+}
+
+model FocusInsight {
+  id            Int         @id @default(autoincrement())
+  date          DateTime    @default(now())
+  summary       String
+  score         Float
+  userId        Int
+  User          User        @relation(fields: [userId], references: [id])
+  workSessionId Int?
+  WorkSession   WorkSession? @relation(fields: [workSessionId], references: [id])
+}
+
+model FaceFocusLog {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  focusScore Float
+  yaw        Float
+  pitch      Float
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], name: "FaceFocusLogs")
 }
 
 model FocusInsight {
