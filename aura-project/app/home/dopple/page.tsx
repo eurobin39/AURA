@@ -5,10 +5,21 @@ import Chart from "chart.js/auto";
 const WorkEfficiencyPage = () => {
   const fatigueChartRef = useRef<HTMLCanvasElement>(null);
   const efficiencyChartRef = useRef<HTMLCanvasElement>(null);
+  const fatigueChartInstance = useRef<Chart | null>(null);
+  const efficiencyChartInstance = useRef<Chart | null>(null);
 
   useEffect(() => {
+    // 기존 차트 제거
+    if (fatigueChartInstance.current) {
+      fatigueChartInstance.current.destroy();
+    }
+    if (efficiencyChartInstance.current) {
+      efficiencyChartInstance.current.destroy();
+    }
+
+    // 새 차트 생성
     if (fatigueChartRef.current) {
-      new Chart(fatigueChartRef.current, {
+      fatigueChartInstance.current = new Chart(fatigueChartRef.current, {
         type: "line",
         data: {
           labels: ["9 AM", "10 AM", "11 AM"],
@@ -19,13 +30,13 @@ const WorkEfficiencyPage = () => {
               borderColor: "#ff6384",
               backgroundColor: "rgba(255, 99, 132, 0.2)",
               fill: true,
-              tension: 0.4, // Curve smoothing
+              tension: 0.4,
             },
           ],
         },
         options: {
           responsive: true,
-          animation: { duration: 1000, easing: "easeInOutQuart" }, // Smooth animation
+          animation: { duration: 1000, easing: "easeInOutQuart" },
           plugins: { legend: { labels: { color: "#ffffff" } } },
           scales: { x: { ticks: { color: "#ffffff" } }, y: { ticks: { color: "#ffffff" } } },
         },
@@ -33,7 +44,7 @@ const WorkEfficiencyPage = () => {
     }
 
     if (efficiencyChartRef.current) {
-      new Chart(efficiencyChartRef.current, {
+      efficiencyChartInstance.current = new Chart(efficiencyChartRef.current, {
         type: "bar",
         data: {
           labels: ["Monday", "Tuesday", "Wednesday"],
@@ -42,7 +53,7 @@ const WorkEfficiencyPage = () => {
               label: "Work Efficiency",
               data: [80, 60, 90],
               backgroundColor: ["#36a2eb", "#ffce56", "#4bc0c0"],
-              borderRadius: 5, // Rounded bar edges
+              borderRadius: 5,
             },
           ],
         },
@@ -54,6 +65,12 @@ const WorkEfficiencyPage = () => {
         },
       });
     }
+
+    // cleanup: 컴포넌트가 언마운트될 때 차트 제거
+    return () => {
+      fatigueChartInstance.current?.destroy();
+      efficiencyChartInstance.current?.destroy();
+    };
   }, []);
 
   return (

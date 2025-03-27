@@ -1,22 +1,27 @@
 import { AzureOpenAI } from "openai";
-import { DefaultAzureCredential, getBearerTokenProvider } from "@azure/identity";
-
+import type {
+  ChatCompletionMessageParam,
+} from "openai/resources/index";
 // Simplified Azure OpenAI client for hackathon
+
 export class AuraAIService {
   private client: AzureOpenAI;
   
   constructor() {
-    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "";
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT || "";
     const apiKey = process.env.AZURE_OPENAI_API_KEY || "";
     const apiVersion = "2024-10-21";
+    const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT || "";
     
-    // Use API key instead of Azure AD token
+    if (!endpoint || !apiKey || !deploymentName) {
+      throw new Error("Missing required Azure OpenAI configuration");
+    }
+
     this.client = new AzureOpenAI({
+      endpoint,
       apiKey,
-      deployment,
       apiVersion,
-      endpoint
+      deployment: deploymentName,
     });
   }
   
@@ -30,45 +35,42 @@ export class AuraAIService {
       timeOfDay: string
     }
   ) {
-    const prompt = `
-    ## User Work Session Data
-    - Keystrokes: ${activityData.keystrokes}
-    - Mouse clicks: ${activityData.clicks}
-    - Mouse movement: ${activityData.mouseMoved}px
-    - Active applications: ${activityData.activeApps.join(', ')}
-    - Session duration: ${activityData.sessionDuration} minutes
-    - Time of day: ${activityData.timeOfDay}
-    
-    Based on this work session data, provide:
-    1. A short analysis of the user's work patterns (2-3 sentences)
-    2. Three specific, actionable tips to improve focus and productivity
-    3. One insight about optimal working conditions for this person
-    
-    Format the response as JSON with keys: "analysis", "tips" (array), and "insight".
-    `;
-    
-    const response = await this.client.completions.create({
-      model: process.env.AZURE_OPENAI_DEPLOYMENT || "",
-      prompt: [prompt],
-      max_tokens: 500,
-      temperature: 0.7
+    const messages: ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content: "You are a productivity analysis assistant that provides insights based on user activity data. Always respond with valid JSON."
+      },
+      {
+        role: "user",
+        content: `Analyze the following work session data and respond ONLY with a JSON object containing exactly these three fields: "analysis" (string), "tips" (array of strings), and "insight" (string).
+
+        Work Session Data:
+        - Keystrokes: ${activityData.keystrokes}
+        - Mouse clicks: ${activityData.clicks}
+        - Mouse movement: ${activityData.mouseMoved}px
+        - Active applications: ${activityData.activeApps.join(', ')}
+        - Session duration: ${activityData.sessionDuration} minutes
+        - Time of day: ${activityData.timeOfDay}
+        `
       }
-    );
+    ];
     
     try {
-      const aiResponse = JSON.parse(response.choices[0].text);
+      const response = await this.client.chat.completions.create({
+        messages,
+        temperature: 0.7,
+        max_tokens: 500,
+        model: process.env.AZURE_OPENAI_DEPLOYMENT || ""
+      });
       
-      // Format response to match FocusInsight schema
-      return {
-        summary: aiResponse.analysis,
-        score: this.calculateInsightScore(activityData),
-        date: new Date(),
-        // These fields will be filled by the database layer
-        userId: undefined,
-        workSessionId: undefined
-      };
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content in AI response");
+      }
+      
+      return JSON.parse(content);
     } catch (e) {
-      console.error("Failed to parse AI response", e);
+      console.error("Failed to generate insights:", e);
       return {
         summary: "Unable to analyze work session.",
         score: 0,

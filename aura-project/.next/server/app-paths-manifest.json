@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/login/page": "app/login/page.js",
+  "/home/dopple/page": "app/home/dopple/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/api/focus-log/route": "app/api/focus-log/route.js"
+}

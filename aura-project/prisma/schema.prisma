@@ -27,7 +27,7 @@ model FocusLog {
   mouseDistance Int
   focusScore    Float
   userId        Int
-  User          User     @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [id], name: "UserFocusLogs")
 }
 
 model WorkSession {
