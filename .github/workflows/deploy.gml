@@ -19,12 +19,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'  
+          node-version: '22.x'
 
-      - name: Install dependencies and build
+      - name: Install dependencies and build (in frontend folder)
         run: |
           npm install
           npm run build
+        working-directory: ./aura-project
+
+      - name: Zip build output for deployment
+        run: zip -r build.zip .
+        working-directory: ./aura-project
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -38,4 +43,4 @@ jobs:
         with:
           app-name: 'myAura'  
           slot-name: 'Production'
-          package: .
+          package: ./aura-project/build.zip
