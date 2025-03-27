@@ -27,7 +27,7 @@ export default function HomeLayout({
               alt="AURA Logo"
               className="h-8 w-auto mr-2"
             />
-            <span className="text-2xl font-bold text-blue-400">AURA</span>
+            <span className="text-2xl font-bold text-white">AURA</span>
           </Link>
         </div>
         
@@ -39,12 +39,12 @@ export default function HomeLayout({
                 href="/home"
                 className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
                   isActive('/home') 
-                    ? 'bg-blue-600/20 text-blue-400' 
-                    : 'text-gray-300 hover:bg-white/10'
+                    ? 'bg-blue-600/20 text-white' 
+                    : 'text-white hover:bg-white/10'
                 }`}
               >
-                <Home className="mr-3 h-5 w-5" />
-                Dashboard
+                <Home className="mr-3 h-5 w-5 text-white" />
+                <div className="text-white">Dashboard</div>
               </Link>
             </li>
             
@@ -53,12 +53,12 @@ export default function HomeLayout({
                 href="/home/focus-coach"
                 className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
                   pathname.includes('/focus-coach') 
-                    ? 'bg-blue-600/20 text-blue-400' 
-                    : 'text-gray-300 hover:bg-white/10'
+                    ? 'bg-blue-600/20 text-white' 
+                    : 'text-white hover:bg-white/10'
                 }`}
               >
-                <Brain className="mr-3 h-5 w-5" />
-                Focus Coach
+                <Brain className="mr-3 h-5 w-5 text-white" />
+                <div className="text-white">Focus Coach</div>  
               </Link>
             </li>
             
@@ -67,12 +67,12 @@ export default function HomeLayout({
                 href="/home/dopple"
                 className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
                   pathname.includes('/dopple') 
-                    ? 'bg-blue-600/20 text-blue-400' 
-                    : 'text-gray-300 hover:bg-white/10'
+                    ? 'bg-blue-600/20 text-white' 
+                    : 'text-white hover:bg-white/10'
                 }`}
               >
-                <BarChart2 className="mr-3 h-5 w-5" />
-                Work Efficiency
+                <BarChart2 className="mr-3 h-5 w-5 text-white" />
+                <div className="text-white">Work Efficiency</div>
               </Link>
             </li>
             
@@ -81,12 +81,12 @@ export default function HomeLayout({
                 href="/home/settings"
                 className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
                   pathname.includes('/settings') 
-                    ? 'bg-blue-600/20 text-blue-400' 
-                    : 'text-gray-300 hover:bg-white/10'
+                    ? 'bg-blue-600/20 text-white' 
+                    : 'text-white hover:bg-white/10'
                 }`}
               >
-                <Settings className="mr-3 h-5 w-5" />
-                Settings
+                <Settings className="mr-3 h-5 w-5 text-white" />
+                <div className="text-white">Settings</div>
               </Link>
             </li>
           </ul>
@@ -96,10 +96,10 @@ export default function HomeLayout({
         <div className="p-4 border-t border-gray-700">
           <Link
             href="/api/logout"
-            className="flex items-center px-4 py-3 text-gray-300 hover:bg-white/10 rounded-lg transition-colors"
+            className="flex items-center px-4 py-3 text-white hover:bg-white/10 rounded-lg transition-colors"
           >
-            <LogOut className="mr-3 h-5 w-5" />
-            Logout
+            <LogOut className="mr-3 h-5 w-5 text-white" />
+            <div className="text-white">Logout</div>
           </Link>
         </div>
       </aside>
