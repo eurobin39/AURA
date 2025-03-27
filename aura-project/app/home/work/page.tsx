@@ -11,7 +11,12 @@ const WorkEfficiencyPage = () => {
   const router = useRouter();
   const weeklyScoreChartRef = useRef<HTMLCanvasElement>(null);
   const [focusScore, setFocusScore] = useState(78);
+  const [overallScore, setOverallScore] = useState(0);
+  const [idlePeriods, setIdlePeriods] = useState(0);
+  const [alertResponses, setAlertResponses] = useState(0);
+  const [productiveZones, setProductiveZones] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const chartInstanceRef = useRef<Chart | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -33,37 +38,68 @@ const WorkEfficiencyPage = () => {
   }, [router]);
 
   useEffect(() => {
-    const weeklyScoreChart = new Chart(weeklyScoreChartRef.current!, {
-      type: "bar",
-      data: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        datasets: [
-          {
-            label: "Weekly Focus Score",
-            data: [65, 72, 80, 68, 85, 60, 78],
-            backgroundColor: "#60a5fa",
-            borderRadius: 4,
-            barThickness: 16,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { labels: { color: "#ffffff" } } },
-        scales: {
-          x: { ticks: { color: "#ffffff" } },
-          y: {
-            ticks: { color: "#ffffff" },
-            beginAtZero: true,
-            max: 100,
-          },
-        },
-      },
-    });
+    const fetchFocusData = async () => {
+      try {
+        const res = await fetch('/api/focus-insights');
+        const data = await res.json();
 
-    return () => {
-      weeklyScoreChart.destroy();
+        if (!Array.isArray(data)) throw new Error("Invalid data format");
+
+        const labels = data.map((entry: any) => new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' }));
+        const scores = data.map((entry: any) => entry.score);
+
+        // KPIs
+        const total = scores.reduce((sum: number, score: number) => sum + score, 0);
+        const avg = total / scores.length;
+        const idle = scores.filter((score: number) => score < 30).length;
+        const alert = scores.filter((score: number) => score < 50).length;
+        const productive = scores.filter((score: number) => score >= 70).length;
+
+        setOverallScore(Math.round(avg));
+        setIdlePeriods(idle);
+        setAlertResponses(alert);
+        setProductiveZones(productive);
+
+        const ctx = weeklyScoreChartRef.current;
+        if (!ctx) return;
+
+        if (chartInstanceRef.current) {
+          chartInstanceRef.current.destroy();
+        }
+
+        chartInstanceRef.current = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Weekly Focus Score",
+                data: scores,
+                backgroundColor: "#60a5fa",
+                borderRadius: 4,
+                barThickness: 16,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: "#ffffff" } } },
+            scales: {
+              x: { ticks: { color: "#ffffff" } },
+              y: {
+                ticks: { color: "#ffffff" },
+                beginAtZero: true,
+                max: 100,
+              },
+            },
+          },
+        });
+      } catch (error) {
+        console.error("Failed to fetch chart data:", error);
+      }
     };
+
+    fetchFocusData();
   }, []);
 
   const auraAnimationSpeed = 5 - Math.min(focusScore / 25, 4);
@@ -96,22 +132,22 @@ const WorkEfficiencyPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <Heart className="mx-auto text-blue-400 mb-1" />
-            <p className="text-lg font-bold text-white">51</p>
+            <p className="text-lg font-bold text-white">{overallScore}</p>
             <p className="text-sm text-gray-400">Overall Scores</p>
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <Home className="mx-auto text-blue-400 mb-1" />
-            <p className="text-lg font-bold text-white">12</p>
+            <p className="text-lg font-bold text-white">{idlePeriods}</p>
             <p className="text-sm text-gray-400">Idle Periods</p>
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <Lock className="mx-auto text-blue-400 mb-1" />
-            <p className="text-lg font-bold text-white">87</p>
+            <p className="text-lg font-bold text-white">{alertResponses}</p>
             <p className="text-sm text-gray-400">Alert Responses</p>
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <BarChart2 className="mx-auto text-blue-400 mb-1" />
-            <p className="text-lg font-bold text-white">32</p>
+            <p className="text-lg font-bold text-white">{productiveZones}</p>
             <p className="text-sm text-gray-400">Productive Zones</p>
           </div>
         </div>
@@ -136,13 +172,13 @@ const WorkEfficiencyPage = () => {
           >
             <h2 className="text-xl font-semibold text-white">Detailed Insights</h2>
             <p className="text-gray-300 text-sm text-center">Explore more detailed data below.</p>
-            <Link href="/dashboard" className="w-full">
+            <Link href="/dashboard/faceAPI" className="w-full">
               <button className="w-full flex items-center justify-center py-2 px-4 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 text-white font-semibold rounded-lg shadow-md hover:from-blue-600/80 hover:to-indigo-600/80 transition-all duration-300">
                 FaceAPI Data
                 <ChevronRight className="ml-2 h-4 w-4" />
               </button>
             </Link>
-            <Link href="/dashboard" className="w-full">
+            <Link href="/dashboard/keyboard" className="w-full">
               <button className="w-full flex items-center justify-center py-2 px-4 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 text-white font-semibold rounded-lg shadow-md hover:from-teal-600/80 hover:to-cyan-600/80 transition-all duration-300">
                 Keyboard/Mouse Data
                 <ChevronRight className="ml-2 h-4 w-4" />

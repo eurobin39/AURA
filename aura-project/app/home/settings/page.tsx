@@ -137,78 +137,72 @@ export default function SettingsPage() {
         }}
       />
 
-      <div className="relative z-10 max-w-2xl mx-auto w-full space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        </div>
+      <div className="relative z-10 max-w-3xl mx-auto w-full space-y-8">
+        <h1 className="text-4xl font-extrabold tracking-tight mb-2">Settings</h1>
 
         {user ? (
           <>
-            <section className="space-y-4">
+            <section className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 space-y-6 shadow-xl">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Profile</h2>
+                <h2 className="text-lg font-semibold">Profile</h2>
                 <button
                   onClick={handleProfileSave}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-md text-white text-sm font-medium transition disabled:opacity-50"
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition disabled:opacity-50"
                 >
                   Save
                 </button>
               </div>
-              <div className="bg-gray-800 p-4 rounded-lg space-y-3">
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
-                />
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                  value={form.username}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
-                />
-              </div>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={form.email}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
+              />
+              <input
+                type="text"
+                name="username"
+                placeholder="Username"
+                value={form.username}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
+              />
             </section>
 
-            <section className="pt-4">
-              <div className="bg-gray-800 p-4 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Password</h2>
-                  <button
-                    onClick={handlePasswordSave}
-                    disabled={loading}
-                    className="bg-indigo-600 hover:bg-indigo-700 px-4 py-1.5 rounded-md text-white text-sm font-medium transition disabled:opacity-50"
-                  >
-                    Change
-                  </button>
-                </div>
-                <input
-                  type="password"
-                  placeholder="Current Password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
-                />
-                <input
-                  type="password"
-                  name="newPassword"
-                  placeholder="New Password"
-                  value={form.newPassword}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
-                />
+            <section className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 space-y-4 shadow-xl mt-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Change Password</h2>
+                <button
+                  onClick={handlePasswordSave}
+                  disabled={loading}
+                  className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-white text-sm font-medium transition disabled:opacity-50"
+                >
+                  Change
+                </button>
               </div>
+              <input
+                type="password"
+                placeholder="Current Password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
+              />
+              <input
+                type="password"
+                name="newPassword"
+                placeholder="New Password"
+                value={form.newPassword}
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
+              />
             </section>
 
-            <section className="space-y-4 pt-6">
+            <section className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl mt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold">Low Focus Alerts</h2>
+                  <h2 className="text-lg font-semibold">Low Focus Alerts</h2>
                   <p className="text-sm text-gray-400">Toggle notifications when your focus drops.</p>
                 </div>
                 <button
@@ -220,21 +214,19 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            <section className="space-y-4 pt-6">
-              <h2 className="text-xl font-semibold">Feedback Interval</h2>
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <input
-                  type="range"
-                  min="15"
-                  max="120"
-                  step="15"
-                  value={feedbackInterval}
-                  onChange={handleIntervalChange}
-                  className="w-full accent-blue-500"
-                />
-                <div className="text-sm text-gray-300 mt-2 text-right">
-                  Every {feedbackInterval} minutes
-                </div>
+            <section className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl mt-6">
+              <h2 className="text-lg font-semibold mb-2">Feedback Interval</h2>
+              <input
+                type="range"
+                min="15"
+                max="120"
+                step="15"
+                value={feedbackInterval}
+                onChange={handleIntervalChange}
+                className="w-full accent-blue-500"
+              />
+              <div className="text-sm text-gray-300 mt-2 text-right">
+                Every {feedbackInterval} minutes
               </div>
             </section>
 

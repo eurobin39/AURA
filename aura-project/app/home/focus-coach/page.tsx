@@ -1,73 +1,94 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { Clock, Play, Square, BarChart2, History, Sparkles, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Brain, BarChart2, Clock, ChevronRight, Trophy, Sparkles } from 'lucide-react';
+import ActivityTracker from '@/components/ActivityTracker';
 import FocusCoach from '@/components/FocusCoach';
 
-interface FocusInsight {
-  analysis: string;
-  tips: string[];
-  insight: string;
-}
+export default function FocusCoachPage() {
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [sessionStart, setSessionStart] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [latestInsight, setLatestInsight] = useState(null);
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-export default function Dashboard() {
-  const [latestInsight, setLatestInsight] = useState<FocusInsight | undefined>(undefined);
-  const [sessionStats, setSessionStats] = useState({ total: 0, average: 0, best: 0 });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const router = useRouter();
+  const startSession = async () => {
+    try {
+      const response = await fetch('/api/focus-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        setIsSessionActive(true);
+        setSessionStart(new Date());
+        setElapsedTime(0);
+      }
+    } catch (error) {
+      console.error('Error starting session:', error);
+    }
+  };
+
+  const endSession = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/focus-sessions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLatestInsight(data.insights);
+        setIsSessionActive(false);
+        setSessionStart(null);
+        fetchSessionHistory();
+      }
+    } catch (error) {
+      console.error('Error ending session:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSessionHistory = async () => {
+    try {
+      const response = await fetch('/api/focus-sessions');
+      if (response.ok) {
+        const data = await response.json();
+        setSessionHistory(data.sessions);
+      }
+    } catch (error) {
+      console.error('Error fetching session history:', error);
+    }
+  };
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/user');
-        if (res.ok) {
-          const user = await res.json();
-          if (!user?.id) router.push('/login');
-          else setIsAuthenticated(true);
-        } else {
-          router.push('/login');
-        }
-      } catch {
-        router.push('/login');
-      }
-    };
-    checkAuth();
-  }, [router]);
+    if (!isSessionActive || !sessionStart) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      const elapsed = Math.floor((now.getTime() - sessionStart.getTime()) / 1000);
+      setElapsedTime(elapsed);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isSessionActive, sessionStart]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/focus-sessions');
-        if (response.ok) {
-          const data = await response.json();
-          const sessions = data.sessions || [];
-          if (sessions.length > 0) {
-            const recentSessionWithInsights = sessions.find((s: any) => s.insights);
-            if (recentSessionWithInsights?.insights) setLatestInsight(recentSessionWithInsights.insights);
-            setSessionStats({
-              total: sessions.length,
-              average: Math.round(sessions.reduce((acc: number, s: any) => acc + (s.focusScore || 0), 0) / sessions.length),
-              best: Math.max(...sessions.map((s: any) => s.focusScore || 0))
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-    fetchData();
+    fetchSessionHistory();
   }, []);
 
-  if (isAuthenticated === null) return null; // Prevent flicker during auth check
+  const formatElapsedTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
-  const auraAnimationSpeed = 5 - Math.min(sessionStats.average / 25, 4);
+  const auraAnimationSpeed = 5 - Math.min((sessionHistory.length > 0 ? sessionHistory.reduce((acc: number, s: any) => acc + (s.focusScore || 0), 0) / sessionHistory.length : 0) / 25, 4);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0f172a] text-white flex flex-col">
-      {/* Radial Aura Background */}
       <motion.div
         className="absolute inset-0 z-0"
         animate={{ scale: [1, 1.4, 1], opacity: [0.25, 0.5, 0.25] }}
@@ -78,94 +99,94 @@ export default function Dashboard() {
         }}
       />
 
-      <div className="relative z-10 p-10 flex-grow">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight">
-              Welcome to <span className="text-blue-500">AURA</span>
-            </h1>
-            <p className="text-gray-400 mt-1">Your AI-powered productivity assistant</p>
-          </div>
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center space-x-2 bg-blue-600/20 px-4 py-2 rounded-lg shadow"
-          >
+      <div className="relative z-10 p-10 flex-grow max-w-7xl mx-auto">
+        <header className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-extrabold tracking-tight">
+            Your <span className="text-blue-500">Focus Session</span>
+          </h1>
+          <div className="flex items-center space-x-2 bg-blue-600/20 px-4 py-2 rounded-lg shadow">
             <Sparkles className="text-blue-400" />
-            <span className="text-sm font-medium text-blue-200">Enhanced Dashboard Experience</span>
-          </motion.div>
+            <span className="text-sm font-medium text-blue-200">Live Coaching Mode</span>
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-25">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-30">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-6"
           >
-            <h2 className="text-xl font-semibold">📊 Your Focus Stats</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center bg-gray-700/40 p-3 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Clock className="text-blue-400" />
-                  <span>Total Sessions</span>
-                </div>
-                <span className="text-white font-bold text-lg">{sessionStats.total}</span>
-              </div>
-              <div className="flex justify-between items-center bg-gray-700/40 p-3 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <BarChart2 className="text-green-400" />
-                  <span>Average Focus</span>
-                </div>
-                <span className="text-green-300 font-bold text-lg">{sessionStats.average}%</span>
-              </div>
-              <div className="flex justify-between items-center bg-gray-700/40 p-3 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Trophy className="text-yellow-400" />
-                  <span>Best Score</span>
-                </div>
-                <span className="text-yellow-300 font-bold text-lg">{sessionStats.best}%</span>
+            <h2 className="text-xl font-semibold">🕒 Session Timer</h2>
+            <div className="flex items-center justify-center bg-gray-700/40 p-4 rounded-lg">
+              <Clock className="text-blue-400 mr-2" />
+              <span className="text-2xl font-mono text-white">{formatElapsedTime(elapsedTime)}</span>
+            </div>
+            <div className="flex justify-center">
+              {!isSessionActive ? (
+                <button onClick={startSession} className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 text-white rounded-lg hover:bg-green-700 transition">
+                  <Play className="mr-2" size={18} /> Start Session
+                </button>
+              ) : (
+                <button onClick={endSession} className="flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                  <Square className="mr-2" size={18} /> End Session
+                </button>
+              )}
+            </div>
+            <div className="mt-4 p-3 bg-gray-700/40 rounded-lg">
+              <h3 className="text-sm text-gray-400 mb-1">Status</h3>
+              <div className="flex items-center">
+                <div className={`h-3 w-3 rounded-full mr-2 ${isSessionActive ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                <span className="text-gray-300">{isSessionActive ? 'Tracking activity...' : 'Idle'}</span>
               </div>
             </div>
-            <Link
-              href="/home/focus-coach"
-              className="inline-flex items-center justify-center w-full mt-4 py-2 bg-gradient-to-r  from-blue-500/80 to-indigo-500/80 rounded-lg text-white font-semibold transition"
-            >
-              Start New Session <ChevronRight className="ml-2 h-4 w-4" />
-            </Link>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-2 bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-700/30 backdrop-blur-lg p-6 rounded-2xl shadow-2xl"
+            className="lg:col-span-2 space-y-8"
           >
-            <div className="flex items-center mb-5">
-              <div className="p-2 bg-blue-600/20 rounded-full mr-3">
-                <Brain className="text-blue-400" />
+            <FocusCoach insight={latestInsight} isLoading={isLoading} />
+            <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-700/30 backdrop-blur-lg p-6 rounded-2xl shadow-2xl">
+              <div className="flex items-center mb-5">
+                <BarChart2 className="text-blue-400 mr-2" />
+                <h2 className="text-xl font-semibold text-white">Focus Analytics</h2>
               </div>
-              <h2 className="text-2xl font-bold text-white">AI Focus Coach</h2>
-            </div>
-            <FocusCoach insight={latestInsight} />
-            <div className="mt-6 border-t border-gray-700 pt-4 flex justify-between items-center">
-              <p className="text-gray-400">Get personalized productivity insights based on your work patterns</p>
-              <Link
-                href="/home/focus-coach"
-                className="flex items-center text-blue-400 hover:text-blue-300"
-              >
-                Open Coach <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-gray-800/50 p-4 rounded-lg text-center">
+                  <div className="text-sm text-gray-400">Average Focus</div>
+                  <div className="text-2xl text-blue-400 font-bold mt-1">
+                    {sessionHistory.length > 0 ? Math.round(sessionHistory.reduce((acc: number, s: any) => acc + (s.focusScore || 0), 0) / sessionHistory.length) : 0}%
+                  </div>
+                </div>
+                <div className="bg-gray-800/50 p-4 rounded-lg text-center">
+                  <div className="text-sm text-gray-400">Best Session</div>
+                  <div className="text-2xl text-green-400 font-bold mt-1">
+                    {sessionHistory.length > 0 ? Math.max(...sessionHistory.map((s: any) => s.focusScore || 0)) : 0}%
+                  </div>
+                </div>
+                <div className="bg-gray-800/50 p-4 rounded-lg text-center">
+                  <div className="text-sm text-gray-400">Total Sessions</div>
+                  <div className="text-2xl text-yellow-400 font-bold mt-1">{sessionHistory.length}</div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Footer CTA */}
-        <footer className="mt-35 text-center text-sm text-gray-500">
+        <footer className="mt-12 text-center text-sm text-gray-500">
           <p className="opacity-60">✨ Stay focused. Let AURA guide you.</p>
         </footer>
       </div>
+
+      <ActivityTracker
+        isActive={isSessionActive}
+        onKeyPress={() => console.log('Key pressed')}
+        onMouseClick={() => console.log('Mouse clicked')}
+        onMouseMove={(distance: number) => console.log(`Mouse moved: ${distance.toFixed(2)}px`)}
+      />
     </div>
   );
 }

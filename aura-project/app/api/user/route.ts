@@ -1,10 +1,10 @@
+// app/api/user/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import db from "@/lib/db";
-import getSession from "@/lib/session";
+import db from '@/lib/db';
+import getSession from '@/lib/session';
 
-
-// PATCH - Update profile (excluding password)
-export async function PATCH(req: NextRequest) {
+// ✅ GET - fetch user info
+export async function GET(req: NextRequest) {
   const session = await getSession();
   const userId = session.id;
 
@@ -13,25 +13,24 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { email, username, lowFocusAlert, feedbackInterval } = body;
-
-    const updatedUser = await db.user.update({
+    const user = await db.user.findUnique({
       where: { id: userId },
-      data: {
-        email,
-        username,
-        lowFocusAlert,
-        feedbackInterval,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        lowFocusAlert: true,
+        feedbackInterval: true,
       },
     });
 
-    return NextResponse.json({
-      id: updatedUser.id,
-      email: updatedUser.email,
-      username: updatedUser.username,
-    });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(user);
   } catch (error) {
-    return NextResponse.json({ error: 'Update failed' }, { status: 500 });
+    console.error('GET /api/user error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
