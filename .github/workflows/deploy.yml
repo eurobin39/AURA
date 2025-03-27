@@ -1,16 +1,23 @@
-# .github/workflows/deploy.yml
-
 name: Build and deploy Node.js app to Azure Web App
 
 on:
   push:
     branches:
-      - frontend/com  
+      - frontend/com
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      COOKIE_PASSWORD: ${{ secrets.COOKIE_PASSWORD }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      FACE_APIKEY: ${{ secrets.FACE_APIKEY }}
+      FACE_API_ENDPOINT: ${{ secrets.FACE_API_ENDPOINT }}
 
     steps:
       - name: Checkout code
@@ -41,6 +48,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'myAura'  
+          app-name: 'myAura'
           slot-name: 'Production'
           package: ./aura-project/build.zip
