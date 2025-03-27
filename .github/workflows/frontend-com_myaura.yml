@@ -13,7 +13,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
+
+    env: 
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      COOKIE_PASSWORD: ${{ secrets.COOKIE_PASSWORD }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      FACE_APIKEY: ${{ secrets.FACE_APIKEY }}
+      FACE_API_ENDPOINT: ${{ secrets.FACE_API_ENDPOINT }}
 
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +53,7 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -53,7 +62,7 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-      
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
