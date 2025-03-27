@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Brain, BarChart2, Clock, ChevronRight, Trophy, Sparkles } from 'lucide-react';
@@ -15,6 +16,26 @@ interface FocusInsight {
 export default function Dashboard() {
   const [latestInsight, setLatestInsight] = useState<FocusInsight | undefined>(undefined);
   const [sessionStats, setSessionStats] = useState({ total: 0, average: 0, best: 0 });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const user = await res.json();
+          if (!user?.id) router.push('/login');
+          else setIsAuthenticated(true);
+        } else {
+          router.push('/login');
+        }
+      } catch {
+        router.push('/login');
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +60,8 @@ export default function Dashboard() {
     };
     fetchData();
   }, []);
+
+  if (isAuthenticated === null) return null; // Prevent flicker during auth check
 
   const auraAnimationSpeed = 5 - Math.min(sessionStats.average / 25, 4);
 

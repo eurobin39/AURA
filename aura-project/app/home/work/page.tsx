@@ -1,14 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Chart from "chart.js/auto";
 import { motion } from "framer-motion";
 import { Heart, Home, Lock, BarChart2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const WorkEfficiencyPage = () => {
+  const router = useRouter();
   const weeklyScoreChartRef = useRef<HTMLCanvasElement>(null);
-  const [focusScore, setFocusScore] = useState(78); // Demo data
+  const [focusScore, setFocusScore] = useState(78);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const data = await res.json();
+          if (!data?.id) router.push('/login');
+          else setIsAuthenticated(true);
+        } else {
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        router.push('/login');
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
     const weeklyScoreChart = new Chart(weeklyScoreChartRef.current!, {
@@ -18,10 +40,10 @@ const WorkEfficiencyPage = () => {
         datasets: [
           {
             label: "Weekly Focus Score",
-            data: [65, 72, 80, 68, 85, 60, 78], // 1주일 스코어 예시 데이터
+            data: [65, 72, 80, 68, 85, 60, 78],
             backgroundColor: "#60a5fa",
             borderRadius: 4,
-            barThickness: 16, // 바 두께를 얇게 설정
+            barThickness: 16,
           },
         ],
       },
@@ -44,11 +66,12 @@ const WorkEfficiencyPage = () => {
     };
   }, []);
 
-  const auraAnimationSpeed = 5 - Math.min(focusScore / 25, 4); // FocusCoachPage 스타일 반영
+  const auraAnimationSpeed = 5 - Math.min(focusScore / 25, 4);
+
+  if (isAuthenticated === null) return null;
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white px-6 py-10 relative overflow-hidden flex flex-col">
-      {/* Background Aura Animation */}
       <motion.div
         className="absolute inset-0 z-0"
         animate={{ scale: [1, 1.4, 1], opacity: [0.25, 0.5, 0.25] }}
@@ -70,7 +93,6 @@ const WorkEfficiencyPage = () => {
           </div>
         </header>
 
-        {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <Heart className="mx-auto text-blue-400 mb-1" />
@@ -89,14 +111,12 @@ const WorkEfficiencyPage = () => {
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <BarChart2 className="mx-auto text-blue-400 mb-1" />
-            <p className="text-lg font-bold text-white">32</p> {/* 오타 수정: PresidclassName 제거 */}
+            <p className="text-lg font-bold text-white">32</p>
             <p className="text-sm text-gray-400">Productive Zones</p>
           </div>
         </div>
 
-        {/* Chart Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Weekly Score Bar Chart */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -108,7 +128,6 @@ const WorkEfficiencyPage = () => {
             <p className="mt-4 text-gray-300 text-sm">Your focus scores over the past week.</p>
           </motion.div>
 
-          {/* Redirect Buttons */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}

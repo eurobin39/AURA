@@ -57,7 +57,7 @@ export default function FocusStatsPage() {
       <div className="relative z-10 max-w-6xl mx-auto flex-grow">
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <Link href="/home/dopple">
+            <Link href="/home/work">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

@@ -64,9 +64,9 @@ export default function HomeLayout({
             
             <li>
               <Link
-                href="/home/dopple"
+                href="/home/work"
                 className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  pathname.includes('/dopple') 
+                  pathname.includes('/work') 
                     ? 'bg-blue-600/20 text-blue-400' 
                     : 'text-gray-300 hover:bg-white/10'
                 }`}
@@ -94,13 +94,16 @@ export default function HomeLayout({
         
         {/* Logout */}
         <div className="p-4 border-t border-gray-700">
-          <Link
-            href="/api/logout"
-            className="flex items-center px-4 py-3 text-gray-300 hover:bg-white/10 rounded-lg transition-colors"
-          >
+        <button
+            onClick={async () => {
+            await fetch("/api/logout", { method: "POST" });
+            window.location.href = "/login"; // or use router.push
+            }}
+            className="w-full flex items-center px-4 py-3 text-gray-300 hover:bg-white/10 rounded-lg transition-colors"
+        >
             <LogOut className="mr-3 h-5 w-5" />
             Logout
-          </Link>
+        </button>
         </div>
       </aside>
       

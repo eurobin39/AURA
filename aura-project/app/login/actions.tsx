@@ -63,7 +63,7 @@ export async function login(prevState: any, formData: FormData) {
             await session.save();
             console.log("User authenticated, redirecting...");
         
-            redirect("/home/dopple");
+            redirect("/home");
         }
     }
 }

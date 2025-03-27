@@ -19,6 +19,8 @@ model User {
   username String @unique
   password String
   focusLogs FocusLog[] @relation("UserFocusLogs")
+  lowFocusAlert    Boolean @default(true)
+  feedbackInterval Int     @default(60) // in minutes
 }
 
 model FocusLog {
