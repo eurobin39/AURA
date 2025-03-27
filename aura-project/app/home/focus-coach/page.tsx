@@ -16,20 +16,27 @@ export default function FocusCoachPage() {
 
   const startSession = async () => {
     try {
+      
       const response = await fetch('/api/focus-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-
+  
       if (response.ok) {
         setIsSessionActive(true);
         setSessionStart(new Date());
         setElapsedTime(0);
+  
+        
+        await fetch('http://localhost:8000/start-session', {
+          method: 'POST'
+        });
       }
     } catch (error) {
       console.error('Error starting session:', error);
     }
   };
+  
 
   const endSession = async () => {
     setIsLoading(true);
@@ -124,7 +131,7 @@ export default function FocusCoachPage() {
             </div>
             <div className="flex justify-center">
               {!isSessionActive ? (
-                <button onClick={startSession} className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                <button onClick={startSession} className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 text-white rounded-lg transition">
                   <Play className="mr-2" size={18} /> Start Session
                 </button>
               ) : (

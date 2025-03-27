@@ -47,7 +47,7 @@ const WorkEfficiencyPage = () => {
   const auraAnimationSpeed = 5 - Math.min(focusScore / 25, 4); // FocusCoachPage 스타일 반영
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white px-6 py-10 relative overflow-hidden flex flex-col mt-10">
+    <div className="min-h-screen bg-[#0f172a] text-white px-6 py-10 relative overflow-hidden flex flex-col">
       {/* Background Aura Animation */}
       <motion.div
         className="absolute inset-0 z-0"
@@ -89,7 +89,7 @@ const WorkEfficiencyPage = () => {
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-4 text-center shadow-xl">
             <BarChart2 className="mx-auto text-blue-400 mb-1" />
-            <p PresidclassName="text-lg font-bold text-white">32</p>
+            <p className="text-lg font-bold text-white">32</p> {/* 오타 수정: PresidclassName 제거 */}
             <p className="text-sm text-gray-400">Productive Zones</p>
           </div>
         </div>
@@ -105,9 +105,7 @@ const WorkEfficiencyPage = () => {
           >
             <h2 className="text-xl font-semibold text-white mb-4">Weekly Focus Score</h2>
             <canvas ref={weeklyScoreChartRef} className="w-full h-56"></canvas>
-            <p className="mt-4 text-gray-300 text-sm">
-              Your focus scores over the past week.
-            </p>
+            <p className="mt-4 text-gray-300 text-sm">Your focus scores over the past week.</p>
           </motion.div>
 
           {/* Redirect Buttons */}
@@ -118,17 +116,15 @@ const WorkEfficiencyPage = () => {
             className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-700/30 backdrop-blur-lg p-6 rounded-2xl shadow-xl flex flex-col justify-center space-y-4"
           >
             <h2 className="text-xl font-semibold text-white">Detailed Insights</h2>
-            <p className="text-gray-300 text-sm text-center">
-              Explore more detailed data below.
-            </p>
-            <Link href="/face-api-data" className="w-full">
-              <button className="w-full flex items-center justify-center py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300">
+            <p className="text-gray-300 text-sm text-center">Explore more detailed data below.</p>
+            <Link href="/dashboard" className="w-full">
+              <button className="w-full flex items-center justify-center py-2 px-4 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 text-white font-semibold rounded-lg shadow-md hover:from-blue-600/80 hover:to-indigo-600/80 transition-all duration-300">
                 FaceAPI Data
                 <ChevronRight className="ml-2 h-4 w-4" />
               </button>
             </Link>
-            <Link href="/input-data" className="w-full">
-              <button className="w-full flex items-center justify-center py-2 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-all duration-300">
+            <Link href="/dashboard" className="w-full">
+              <button className="w-full flex items-center justify-center py-2 px-4 bg-gradient-to-r from-blue-500/80 to-indigo-500/80 text-white font-semibold rounded-lg shadow-md hover:from-teal-600/80 hover:to-cyan-600/80 transition-all duration-300">
                 Keyboard/Mouse Data
                 <ChevronRight className="ml-2 h-4 w-4" />
               </button>

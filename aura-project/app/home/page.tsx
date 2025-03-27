@@ -107,7 +107,7 @@ export default function Dashboard() {
             </div>
             <Link
               href="/home/focus-coach"
-              className="inline-flex items-center justify-center w-full mt-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold transition"
+              className="inline-flex items-center justify-center w-full mt-4 py-2 bg-gradient-to-r  from-blue-500/80 to-indigo-500/80 rounded-lg text-white font-semibold transition"
             >
               Start New Session <ChevronRight className="ml-2 h-4 w-4" />
             </Link>
