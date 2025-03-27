@@ -11,14 +11,15 @@ load_dotenv()
 API_KEY = os.getenv("FACE_APIKEY")
 ENDPOINT = os.getenv("FACE_API_ENDPOINT")
 
-BACKEND_URL = "http://127.0.0.1:5001"
-face_api_url = f"{ENDPOINT}/face/v1.0/detect"
+# Backend API info
+BACKEND_URL = "http://127.0.0.1:5001/face-analysis"  # Same structure as previous API
 
-# Set headers for the API request
+face_api_url = f"{ENDPOINT}/face/v1.0/detect"
 headers = {"Ocp-Apim-Subscription-Key": API_KEY, "Content-Type": "application/octet-stream"}
-# Define parameters for face detection and attributes to return
 params = {"returnFaceAttributes": "headPose,blur,exposure,occlusion", "detectionModel": "detection_01"}
 
+# Initialize previous head position globally
+previous_yaw, previous_pitch = None, None
 
 def analyze_face(image_path):
     """Analyze the image using Azure Face API and return detected faces."""
@@ -36,10 +37,6 @@ def analyze_face(image_path):
         print(f"❌ Error: {str(e)}")
         return None
 
-
-# Initialize previous head position globally
-previous_yaw, previous_pitch = None, None
-
 def estimate_efficiency(faces, image_name=""):
     """Estimate focus and fatigue based on face attributes and send data to backend."""
     global previous_yaw, previous_pitch
@@ -56,44 +53,35 @@ def estimate_efficiency(faces, image_name=""):
     blur = attributes.get("blur", {}).get("value", 0)
     eye_occluded = attributes.get("occlusion", {}).get("eyeOccluded", False)
 
-    # Calculate deviation of head position parameters (ignore the deviation within range -5 to 5)
     yaw_deviation = abs(yaw) if abs(yaw) > 5 else 0
     pitch_deviation = abs(pitch) if abs(pitch) > 5 else 0
     total_deviation = sqrt(yaw_deviation**2 + pitch_deviation**2)
 
-    # Calculate centrality penalty
-    centrality_penalty = total_deviation * 2  # Deviation from (0,0) reduces focus
+    centrality_penalty = total_deviation * 2
 
-    # If this is the first frame, use only the head position for focus score
     if previous_yaw is None or previous_pitch is None:
-        focus_score = max(0, 100 - centrality_penalty)  # Only centrality penalty
+        focus_score = max(0, 100 - centrality_penalty)
     else:
-        # Calculate head movement from the last frame
         yaw_change = abs(yaw - previous_yaw)
-        pitch_change = abs(pitch - previous_pitch)    
+        pitch_change = abs(pitch - previous_pitch)
         position_change = sqrt(yaw_change**2 + pitch_change**2)
 
-        # Calculate movement penalty
-        movement_penalty = position_change * 3  # More movement = lower focus
-
-        # Calculate focus score (movement + centrality penalty)
+        movement_penalty = position_change * 3
         focus_score = max(0, 100 - movement_penalty - centrality_penalty)
 
-    # Update previous head position
     previous_yaw, previous_pitch = yaw, pitch
 
     print(f"🎯 Focus Score: {focus_score:.1f}% (Yaw={yaw}, Pitch={pitch})")
     if eye_occluded:
         print("⚠️ Eyes occluded → Possible fatigue")
 
-    # Prepare data to send to backend
     face_data = {
-        "image_name": image_name,
-        "focus_score": focus_score,
+        "imageName": image_name,
+        "focusScore": round(focus_score, 1),
         "yaw": yaw,
         "pitch": pitch,
         "blur": blur,
-        "eye_occluded": eye_occluded
+        "eyeOccluded": eye_occluded
     }
 
     send_to_backend(face_data)
@@ -102,18 +90,16 @@ def estimate_efficiency(faces, image_name=""):
 def send_to_backend(data):
     """Send analyzed face data to the backend."""
     try:
-        response = requests.post(f"{BACKEND_URL}/face-analysis", json=data)
-
-        if response.status_code == 200:
-            print("✅ Data successfully sent to backend!")
+        response = requests.post(BACKEND_URL, json=data)
+        if response.status_code == 201:
+            print("✅ DB Successfully Sent")
         else:
-            print(f"❌ Backend Error: {response.status_code} - {response.text}")
+            print(f"❌ DB Failed: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ Failed to send data to backend: {str(e)}")
-
+        print(f"❌ API exception: {e}")
 
 cap = cv2.VideoCapture(0)
-frame_skip = 300  # Process every 300th frame
+frame_skip = 300
 
 if not cap.isOpened():
     print("Error: Could not open webcam.")
@@ -133,7 +119,6 @@ try:
             image_path = "temp_frame.jpg"
             cv2.imwrite(image_path, frame)
             print("\n🔍 Sending frame to Azure Face API...")
-
             faces = analyze_face(image_path)
             estimate_efficiency(faces, image_name=image_path)
 
@@ -143,17 +128,3 @@ try:
 finally:
     cap.release()
     cv2.destroyAllWindows()
-
-
-# Test loop for processing test images
-if __name__ == "__main__":
-    image_folder = "test_images"
-    image_files = [f for f in os.listdir(image_folder) if f.endswith(('jpg', 'jpeg', 'png'))]
-
-    for image_name in image_files:
-        image_path = os.path.join(image_folder, image_name)
-        for _ in range(3):
-            print(f"\n🔍 Analyzing: {image_path}")
-            faces = analyze_face(image_path)
-            estimate_efficiency(faces, image_name=image_name)
-            time.sleep(2)
