@@ -40,7 +40,7 @@ jobs:
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        with:
+        with:  
           app-name: 'myAura'
           slot-name: 'Production'
           package: ./aura-project/build.zip
