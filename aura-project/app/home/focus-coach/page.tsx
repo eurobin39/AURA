@@ -148,7 +148,7 @@ export default function FocusCoachPage() {
             transition={{ duration: 0.6 }}
             className="lg:col-span-2 space-y-8"
           >
-            <FocusCoach insight={latestInsight} isLoading={isLoading} />
+            <FocusCoach isLoading={isLoading} />
             <div className="bg-gradient-to-br from-blue-900/40 to-indigo-900/40 border border-blue-700/30 backdrop-blur-lg p-6 rounded-2xl shadow-2xl">
               <div className="flex items-center mb-5">
                 <BarChart2 className="text-blue-400 mr-2" />
