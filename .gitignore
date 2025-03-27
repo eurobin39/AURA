@@ -5,6 +5,7 @@ backend/venv
 .env
 *.jpg
 aura-project/.next
+trace
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -20,6 +21,7 @@ frontend/node_modules
 
 # testing
 /coverage
+aura-project/coverage
 
 # next.js
 /.next/
