@@ -12,7 +12,8 @@ API_KEY = os.getenv("FACE_APIKEY")
 ENDPOINT = os.getenv("FACE_API_ENDPOINT")
 
 # Backend API info
-API_URL = "http://localhost:3000/api/focus-log"  # Next.js API address
+API_URL = "http://localhost:3000/api/face-focus"  # Next.js API address
+USER_ID = 1  
 
 face_api_url = f"{ENDPOINT}/face/v1.0/detect"
 headers = {"Ocp-Apim-Subscription-Key": API_KEY, "Content-Type": "application/octet-stream"}
@@ -37,7 +38,7 @@ def analyze_face(image_path):
         print(f"❌ Error: {str(e)}")
         return None
 
-def estimate_efficiency(faces, image_name=""):
+def estimate_efficiency(faces):
     """Estimate focus and fatigue based on face attributes and send data to backend."""
     global previous_yaw, previous_pitch
 
@@ -79,6 +80,7 @@ def estimate_efficiency(faces, image_name=""):
         "focusScore": round(focus_score, 1),
         "yaw": yaw,
         "pitch": pitch,
+        "userId": USER_ID
     }
 
     send_to_backend(face_data)
