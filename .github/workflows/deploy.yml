@@ -35,7 +35,7 @@ jobs:
         working-directory: ./aura-project
 
       - name: Zip build output
-        run: zip -r build.zip ./*
+        run: zip -r build.zip .next public package.json package-lock.json
         working-directory: ./aura-project
 
       - name: Deploy to Azure Web App
