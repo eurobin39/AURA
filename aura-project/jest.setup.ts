@@ -15,17 +15,17 @@ jest.mock('next/navigation', () => ({
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }) => {
+    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
       return { type: 'div', props: { ...props, children } };
     },
-    section: ({ children, ...props }) => {
+    section: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
       return { type: 'section', props: { ...props, children } };
     },
-    main: ({ children, ...props }) => {
+    main: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
       return { type: 'main', props: { ...props, children } };
     }
   },
-  AnimatePresence: ({ children }) => children
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children
 }));
 
 // Mock IntersectionObserver

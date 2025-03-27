@@ -17,7 +17,8 @@ interface User {
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [form, setForm] = useState({ email: '', username: '', password: '' });
+  const [form, setForm] = useState({ email: '', username: '', newPassword: '' });
+  const [currentPassword, setCurrentPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -35,7 +36,7 @@ export default function SettingsPage() {
           else {
             setIsAuthenticated(true);
             setUser(data);
-            setForm({ email: data.email, username: data.username, password: data.password });
+            setForm({ email: data.email, username: data.username, newPassword: '' });
             setLowFocusAlert(data.lowFocusAlert ?? true);
             setFeedbackInterval(data.feedbackInterval ?? 60);
           }
@@ -62,19 +63,57 @@ export default function SettingsPage() {
     setFeedbackInterval(parseInt(e.target.value));
   };
 
-  const handleSave = async () => {
+  const handleProfileSave = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/user', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, lowFocusAlert, feedbackInterval }),
+        body: JSON.stringify({
+          email: form.email,
+          username: form.username,
+          lowFocusAlert,
+          feedbackInterval,
+        }),
       });
 
       if (res.ok) {
         setMessage('✅ Profile updated successfully!');
       } else {
-        setMessage('❌ Failed to update profile.');
+        const errorData = await res.json();
+        setMessage(`❌ ${errorData.message || 'Failed to update profile.'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage('❌ Error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSave = async () => {
+    if (!form.newPassword || !currentPassword) {
+      setMessage('❌ Please enter your current and new password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/user/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword: form.newPassword,
+        }),
+      });
+
+      if (res.ok) {
+        setMessage('✅ Password updated successfully!');
+        setCurrentPassword('');
+        setForm((prev) => ({ ...prev, newPassword: '' }));
+      } else {
+        const errorData = await res.json();
+        setMessage(`❌ ${errorData.message || 'Failed to update password.'}`);
       }
     } catch (err) {
       console.error(err);
@@ -93,67 +132,84 @@ export default function SettingsPage() {
         animate={{ scale: [1, 1.4, 1], opacity: [0.25, 0.5, 0.25] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          background:
-            "radial-gradient(circle at center, rgba(59,130,246,0.15), transparent 70%)",
+          background: "radial-gradient(circle at center, rgba(59,130,246,0.15), transparent 70%)",
           filter: "blur(100px)",
         }}
       />
 
-      <div className="relative z-5 max-w-2xl mx-auto w-full space-y-5">
+      <div className="relative z-10 max-w-2xl mx-auto w-full space-y-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-4">Settings</h1>
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-semibold transition disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : 'Save Settings'}
-          </button>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         </div>
 
         {user ? (
           <>
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-4">
-              <h2 className="text-lg font-semibold mb-2">Your Profile</h2>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Email</label>
+            <section className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Profile</h2>
+                <button
+                  onClick={handleProfileSave}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-md text-white text-sm font-medium transition disabled:opacity-50"
+                >
+                  Save
+                </button>
+              </div>
+              <div className="bg-gray-800 p-4 rounded-lg space-y-3">
                 <input
                   type="email"
                   name="email"
+                  placeholder="Email"
                   value={form.email}
                   onChange={handleFormChange}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
                 />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Username</label>
                 <input
                   type="text"
                   name="username"
+                  placeholder="Username"
                   value={form.username}
                   onChange={handleFormChange}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
                 />
               </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Password</label>
+            </section>
+
+            <section className="pt-4">
+              <div className="bg-gray-800 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold">Password</h2>
+                  <button
+                    onClick={handlePasswordSave}
+                    disabled={loading}
+                    className="bg-indigo-600 hover:bg-indigo-700 px-4 py-1.5 rounded-md text-white text-sm font-medium transition disabled:opacity-50"
+                  >
+                    Change
+                  </button>
+                </div>
                 <input
                   type="password"
-                  name="password"
-                  value={form.password}
+                  placeholder="Current Password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
+                />
+                <input
+                  type="password"
+                  name="newPassword"
+                  placeholder="New Password"
+                  value={form.newPassword}
                   onChange={handleFormChange}
                   className="w-full px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring"
                 />
               </div>
-            </div>
+            </section>
 
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
+            <section className="space-y-4 pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">Low Focus Alerts</h2>
-                  <p className="text-sm text-gray-400">
-                    Receive notifications when your focus drops below a threshold.
-                  </p>
+                  <h2 className="text-xl font-semibold">Low Focus Alerts</h2>
+                  <p className="text-sm text-gray-400">Toggle notifications when your focus drops.</p>
                 </div>
                 <button
                   onClick={handleToggleAlert}
@@ -162,37 +218,36 @@ export default function SettingsPage() {
                   {lowFocusAlert ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
                 </button>
               </div>
-            </div>
+            </section>
 
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-6 shadow-xl">
-              <h2 className="text-lg font-semibold mb-2">Feedback Frequency</h2>
-              <p className="text-sm text-gray-400 mb-3">
-                Choose how often you receive AI-based productivity feedback.
-              </p>
-              <input
-                type="range"
-                min="15"
-                max="120"
-                step="15"
-                value={feedbackInterval}
-                onChange={handleIntervalChange}
-                className="w-full accent-blue-500"
-              />
-              <div className="text-sm text-gray-300 mt-2 text-right">
-                Every {feedbackInterval} minutes
+            <section className="space-y-4 pt-6">
+              <h2 className="text-xl font-semibold">Feedback Interval</h2>
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <input
+                  type="range"
+                  min="15"
+                  max="120"
+                  step="15"
+                  value={feedbackInterval}
+                  onChange={handleIntervalChange}
+                  className="w-full accent-blue-500"
+                />
+                <div className="text-sm text-gray-300 mt-2 text-right">
+                  Every {feedbackInterval} minutes
+                </div>
               </div>
-            </div>
+            </section>
 
-            {message && <p className="text-sm text-gray-300 text-right">{message}</p>}
+            {message && <p className="text-sm text-gray-300 text-right pt-4">{message}</p>}
           </>
         ) : (
-          <p>Loading user data...</p>
+          <p className="text-center text-gray-400">Loading user data...</p>
         )}
       </div>
-      {/* Footer CTA */}
-      <footer className="mt-5 text-center text-sm text-gray-500">
-          <p className="opacity-60">✨ Stay focused. Let AURA guide you.</p>
-        </footer>
+
+      <footer className="mt-10 text-center text-sm text-gray-500">
+        <p className="opacity-60">✨ Stay focused. Let AURA guide you.</p>
+      </footer>
     </div>
   );
 }
