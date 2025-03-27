@@ -12,7 +12,7 @@ API_KEY = os.getenv("FACE_APIKEY")
 ENDPOINT = os.getenv("FACE_API_ENDPOINT")
 
 # Backend API info
-BACKEND_URL = "http://127.0.0.1:5001/face-analysis"  # Same structure as previous API
+API_URL = "http://localhost:3000/api/focus-log"  # Next.js API address
 
 face_api_url = f"{ENDPOINT}/face/v1.0/detect"
 headers = {"Ocp-Apim-Subscription-Key": API_KEY, "Content-Type": "application/octet-stream"}
@@ -76,12 +76,9 @@ def estimate_efficiency(faces, image_name=""):
         print("⚠️ Eyes occluded → Possible fatigue")
 
     face_data = {
-        "imageName": image_name,
         "focusScore": round(focus_score, 1),
         "yaw": yaw,
         "pitch": pitch,
-        "blur": blur,
-        "eyeOccluded": eye_occluded
     }
 
     send_to_backend(face_data)
@@ -90,7 +87,7 @@ def estimate_efficiency(faces, image_name=""):
 def send_to_backend(data):
     """Send analyzed face data to the backend."""
     try:
-        response = requests.post(BACKEND_URL, json=data)
+        response = requests.post(API_URL, json=data)
         if response.status_code == 201:
             print("✅ DB Successfully Sent")
         else:
