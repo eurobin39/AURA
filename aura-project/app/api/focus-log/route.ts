@@ -11,28 +11,38 @@ interface FocusLog {
 }
 
 // ✅ GET: 최근 10개의 포커스 로그 조회
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    console.log("[FocusLog GET] Session:", session); // 세션 확인
+    const userId = session?.id;
 
-    if (!session?.id) {
-      console.warn("[FocusLog GET] No active session found");
-      return NextResponse.json({ error: "Unauthorized: No active session" }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const logs = await db.focusLog.findMany({
-      where: { userId: session.id },
-      orderBy: { timestamp: "desc" },
-      take: 10,
-    });
-    console.log("[FocusLog GET] Retrieved logs:", logs); // 로그 조회 결과
+    const { searchParams } = new URL(request.url);
+    const latest = searchParams.get('latest') === 'true';
 
-    const responseData = Array.isArray(logs) ? logs : [];
-    return NextResponse.json(responseData, { status: 200 });
+    if (latest) {
+      // Get only the most recent log entry
+      const latestLog = await db.focusLog.findFirst({
+        where: { userId },
+        orderBy: { timestamp: 'desc' }
+      });
+      
+      return NextResponse.json(latestLog || {});
+    } else {
+      // Get all logs (existing behavior)
+      const logs = await db.focusLog.findMany({
+        where: { userId },
+        orderBy: { timestamp: 'desc' }
+      });
+      
+      return NextResponse.json(logs);
+    }
   } catch (error) {
-    console.error("[FocusLog GET] Failed to fetch logs:", error);
-    return NextResponse.json({ error: "Failed to fetch focus logs" }, { status: 500 });
+    console.error('Error fetching focus logs:', error);
+    return NextResponse.json({ error: 'Failed to fetch focus logs' }, { status: 500 });
   }
 }
 
