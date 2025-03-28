@@ -55,7 +55,7 @@ export default function FocusCoachPage() {
       const started = await startPersistentSession(
         setFocusData,
         setFaceData,
-        videoRef
+        videoRef as React.RefObject<HTMLVideoElement>
       );
       
       if (started) {
