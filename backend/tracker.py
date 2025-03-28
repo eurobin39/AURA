@@ -10,7 +10,7 @@ mouse_distance = 0
 prev_position = (0, 0)
 
 # bakend API info
-API_URL = "http://localhost:3000/api/focus-log"  # Next.js API address
+API_URL = "https://aura-backend.onrender.com/api/focus-log"  # Next.js API address
 USER_ID = 1  
 
 # Keyboard
