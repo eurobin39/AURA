@@ -1,0 +1,14 @@
+-- CreateTable
+CREATE TABLE "FaceFocusLog" (
+    "id" SERIAL NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "focusScore" DOUBLE PRECISION NOT NULL,
+    "yaw" DOUBLE PRECISION NOT NULL,
+    "pitch" DOUBLE PRECISION NOT NULL,
+    "userId" INTEGER NOT NULL,
+
+    CONSTRAINT "FaceFocusLog_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "FaceFocusLog" ADD CONSTRAINT "FaceFocusLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

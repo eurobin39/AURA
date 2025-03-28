@@ -1,16 +1,13 @@
-<<<<<<< HEAD
-node_modules/
-*.pt
-__pycache__/
-backend/venv
-.env
-*.jpg
-=======
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-frontend/node_modules
+# ───────────── Dependencies ─────────────
+# Node.js (frontend)
+node_modules/
+aura-project/.next/
+aura-project/node_modules
 /node_modules
+
+# Yarn
 /.pnp
 .pnp.*
 .yarn/*
@@ -19,38 +16,55 @@ frontend/node_modules
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 
-# next.js
+# Python virtual environments
+env/
+venv/
+.venv/
+.myenv/
+.path/
+
+# ───────────── Build & Testing ─────────────
+/coverage
+/build
 /.next/
 /out/
 frontend/.next
 
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
 
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# ───────────── Debug Logs ─────────────
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
-# env files (can opt-in for committing if needed)
-.env*
+# ───────────── Environment & Secrets ─────────────
+.env
+.env.*
+.env.local
+.env.*.local
+*.pem
 
-# vercel
+# ───────────── Vercel ─────────────
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# ───────────── OS-specific ─────────────
+.DS_Store
+Thumbs.db
+desktop.ini
 
-#images
+# ───────────── Editor ─────────────
+.vscode/
+.idea/
+
+# ───────────── Temp / Runtime ─────────────
 temp_frame.jpg
->>>>>>> 0a6a29f01f8bf109f70275b4e1fecf98232bf891

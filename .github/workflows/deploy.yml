@@ -1,0 +1,47 @@
+name: Build and deploy Node.js app to Azure Web App - myAura
+
+on:
+  push:
+    branches:
+      - frontend/com
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env: 
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      COOKIE_PASSWORD: ${{ secrets.COOKIE_PASSWORD }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      FACE_APIKEY: ${{ secrets.FACE_APIKEY }}
+      FACE_API_ENDPOINT: ${{ secrets.FACE_API_ENDPOINT }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build --if-present
+        working-directory: ./aura-project
+
+      - name: Zip build output
+        run: zip -r build.zip .next public package.json package-lock.json
+        working-directory: ./aura-project
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:  
+          app-name: 'myAura'
+          slot-name: 'Production'
+          package: ./aura-project/build.zip
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D9D12368788D4CBE99515BFCA1944E63 }}

@@ -6,7 +6,7 @@ An AI-driven productivity assistant that enhances focus by analyzing facial expr
 
 Euro Bae - eurobin39@gmail.com
 
-Vivian -
+Hong Shen - shenho@tcd.ie
 
 Zicheng liang - liangzicheng02@gmail.com
 

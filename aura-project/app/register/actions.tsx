@@ -87,7 +87,7 @@ export async function createAccount(
                 username: result.data.username,
                 email: result.data.email,
                 password: hashedPassword,
-                role: "Pending", // Automatically assign "Pending" role
+                
             },
             select: {
                 id: true,
@@ -97,6 +97,6 @@ export async function createAccount(
 
         session.id = user.id
         await session.save();
-        redirect("/pending-approval"); // Redirect to a pending approval page
+        redirect("/home"); // Redirect to a pending approval page
     }
 }
