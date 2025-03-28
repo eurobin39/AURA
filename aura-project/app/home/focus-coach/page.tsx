@@ -14,11 +14,16 @@ import { motion } from "framer-motion";
 import { startFaceAnalysis } from "@/lib/faceAPI";
 import { startTracking } from "@/lib/tracker";
 import Link from "next/link";
+import { 
+  getSessionStatus,
+  getSessionStartTime,
+  startPersistentSession,
+  endPersistentSession 
+} from "@/lib/session-persistence";
 
 export default function FocusCoachPage() {
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const isSessionActiveRef = useRef(false);
-  const [sessionStart, setSessionStart] = useState<Date | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(getSessionStatus());
+  const [sessionStart, setSessionStart] = useState<Date | null>(getSessionStartTime());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [focusData, setFocusData] = useState({
     keyboard: 0,
@@ -37,24 +42,28 @@ export default function FocusCoachPage() {
   const cleanupRef = useRef<(() => void)[]>([]);
 
   useEffect(() => {
-    isSessionActiveRef.current = isSessionActive;
-  }, [isSessionActive]);
+    // Initialize session time from localStorage
+    const storedStart = getSessionStartTime();
+    if (storedStart) {
+      setSessionStart(storedStart);
+      setElapsedTime(Math.floor((Date.now() - storedStart.getTime()) / 1000));
+    }
+  }, []);
 
   const startSession = async () => {
     try {
-      const sessionResponse = await fetch("/api/focus-sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const sessionData = await sessionResponse.json();
-      if (!sessionResponse.ok) throw new Error(sessionData.error || "Failed to start session");
-
-      setIsSessionActive(true);
-      setSessionStart(new Date());
-      setElapsedTime(0);
-      setInsightText(null);
-      cleanupRef.current.push(startTracking(setFocusData, isSessionActiveRef));
-      cleanupRef.current.push(startFaceAnalysis(videoRef, setFaceData, isSessionActiveRef));
+      const started = await startPersistentSession(
+        setFocusData,
+        setFaceData,
+        videoRef
+      );
+      
+      if (started) {
+        setIsSessionActive(true);
+        setSessionStart(new Date());
+        setElapsedTime(0);
+        setInsightText(null);
+      }
     } catch (error) {
       console.error("[FocusCoach] Error starting session:", error);
     }
@@ -62,18 +71,13 @@ export default function FocusCoachPage() {
 
   const endSession = async () => {
     try {
+      const result = await endPersistentSession();
       setIsSessionActive(false);
       setSessionStart(null);
-      cleanupRef.current.forEach((cleanup) => cleanup());
-      cleanupRef.current = [];
-
-      const response = await fetch("/api/focus-sessions", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-      });
-      const endData = await response.json();
-      if (!response.ok) throw new Error(endData.error || "Failed to end session");
-      if (endData.insights?.analysis) setInsightText(endData.insights.analysis);
+      
+      if (result?.insights?.analysis) {
+        setInsightText(result.insights.analysis);
+      }
     } catch (error) {
       console.error("[FocusCoach] Error ending session:", error);
     }
