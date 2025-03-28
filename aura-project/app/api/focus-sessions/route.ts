@@ -1,99 +1,92 @@
-import { NextRequest, NextResponse } from 'next/server';
-import getSession from '@/lib/session';
-import db from '@/lib/db';
-import { sessionTracker } from '@/lib/session-tracker';
+import { NextRequest, NextResponse } from "next/server";
+import getSession from "@/lib/session";
+import db from "@/lib/db";
+import { sessionTracker } from "@/lib/session-tracker";
 
-const BACKEND_URL = process.env.BACKEND_URL || 'https://aura-backend-h4ei.onrender.com';
-
+// ✅ POST: 새로운 세션 시작
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    const userId = session.id;
+    console.log("[FocusSessions POST] Session:", session); // 세션 확인
 
+    const userId = session?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.warn("[FocusSessions POST] No userId found in session");
+      return NextResponse.json({ error: "Unauthorized: No active session" }, { status: 401 });
     }
 
     const newSession = await sessionTracker.startSession(userId);
-
-    // FastAPI 백엔드로 세션 시작 요청
-    const backendResponse = await fetch(`${BACKEND_URL}/start-session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: newSession.id }),
-    });
-
-    if (!backendResponse.ok) {
-      throw new Error('Failed to start tracking on backend');
-    }
+    console.log("[FocusSessions POST] New session created:", newSession); // 세션 생성 확인
 
     return NextResponse.json({
       success: true,
-      message: 'Session started successfully',
+      message: "Session started successfully",
       sessionId: newSession.id,
-    });
+    }, { status: 201 });
   } catch (error) {
-    console.error('Failed to start session:', error);
-    return NextResponse.json({ error: 'Failed to start session' }, { status: 500 });
+    console.error("[FocusSessions POST] Failed to start session:", error);
+    return NextResponse.json({ error: "Failed to start session" }, { status: 500 });
   }
 }
 
+// ✅ PUT: 현재 세션 종료
 export async function PUT(request: NextRequest) {
   try {
     const session = await getSession();
-    const userId = session.id;
+    console.log("[FocusSessions PUT] Session:", session); // 세션 확인
 
+    const userId = session?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.warn("[FocusSessions PUT] No userId found in session");
+      return NextResponse.json({ error: "Unauthorized: No active session" }, { status: 401 });
     }
 
     const result = await sessionTracker.endSession();
+    console.log("[FocusSessions PUT] Session end result:", result); // 종료 결과 확인
 
     if (!result) {
-      return NextResponse.json({ error: 'No active session found' }, { status: 404 });
+      console.warn("[FocusSessions PUT] No active session found in sessionTracker");
+      return NextResponse.json({ error: "No active session found" }, { status: 404 });
     }
-
-    // FastAPI session end request
-    // await fetch(`${BACKEND_URL}/stop-session`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ userId: result.session.id }),
-    // });
 
     return NextResponse.json({
       success: true,
-      message: 'Session ended successfully',
+      message: "Session ended successfully",
       session: result.session,
       insights: result.insights,
-    });
+    }, { status: 200 });
   } catch (error) {
-    console.error('Failed to end session:', error);
-    return NextResponse.json({ error: 'Failed to end session' }, { status: 500 });
+    console.error("[FocusSessions PUT] Failed to end session:", error);
+    return NextResponse.json({ error: "Failed to end session" }, { status: 500 });
   }
 }
 
+// ✅ GET: 최근 10개 세션 조회
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    const userId = session.id;
+    console.log("[FocusSessions GET] Session:", session); // 세션 확인
 
+    const userId = session?.id;
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.warn("[FocusSessions GET] No userId found in session");
+      return NextResponse.json({ error: "Unauthorized: No active session" }, { status: 401 });
     }
 
     const sessions = await db.workSession.findMany({
       where: { userId },
       include: { insights: true },
-      orderBy: { startTime: 'desc' },
+      orderBy: { startTime: "desc" },
       take: 10,
     });
+    console.log("[FocusSessions GET] Retrieved sessions:", sessions); // 조회 결과 확인
 
     return NextResponse.json({
       success: true,
       sessions,
-    });
+    }, { status: 200 });
   } catch (error) {
-    console.error('Failed to fetch sessions:', error);
-    return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
+    console.error("[FocusSessions GET] Failed to fetch sessions:", error);
+    return NextResponse.json({ error: "Failed to fetch sessions" }, { status: 500 });
   }
 }
