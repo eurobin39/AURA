@@ -116,13 +116,16 @@ export const startTracking = (
   }, 15000); // 15초마다
 
   function calculateFocusScore(keys: number, clicks: number, distance: number): number {
-    const score =
-      Math.min(keys / 150, 1) * 50 +
-      Math.min(clicks / 30, 1) * 20 +
-      Math.min(distance / 2000, 1) * 30;
-    console.log("[Tracker] Calculated focus score:", score);
-    return score;
+    const keyWeight = 0.4 * Math.min(keys / 40, 1);      
+    const clickWeight = 0.2 * Math.min(clicks / 10, 1);  
+    const moveWeight = 0.4 * Math.min(distance / 800, 1); 
+  
+    const score = (keyWeight + clickWeight + moveWeight) * 100;
+    console.log("[Tracker] Relaxed focus score:", score);
+    return Math.round(score);
   }
+  
+  
 
   return () => {
     removeEventListeners();
