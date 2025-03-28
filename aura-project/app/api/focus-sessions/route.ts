@@ -3,7 +3,7 @@ import getSession from '@/lib/session';
 import db from '@/lib/db';
 import { sessionTracker } from '@/lib/session-tracker';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'https://aura-backend.onrender.com';
+const BACKEND_URL = process.env.BACKEND_URL || 'https://aura-backend-h4ei.onrender.com';
 
 export async function POST(request: NextRequest) {
   try {
