@@ -32,9 +32,19 @@ export class AuraAIService {
       mouseMoved: number,
       activeApps: string[],
       sessionDuration: number,
-      timeOfDay: string
+      timeOfDay: string,
+      faceData?: { 
+        focusScore: number,
+        yaw: number,
+        pitch: number
+      } | null
     }
   ) {
+    // Safety check and formatting for face data
+    const formatNumber = (value: number | undefined | null): string => {
+      return typeof value === 'number' ? value.toFixed(1) : '0.0';
+    };
+
     const messages: ChatCompletionMessageParam[] = [
       {
         role: "system",
@@ -48,9 +58,16 @@ export class AuraAIService {
         - Keystrokes: ${activityData.keystrokes}
         - Mouse clicks: ${activityData.clicks}
         - Mouse movement: ${activityData.mouseMoved}px
-        - Active applications: ${activityData.activeApps.join(', ')}
+        - Active applications: ${activityData.activeApps?.join(', ') || 'None recorded'}
         - Session duration: ${activityData.sessionDuration} minutes
         - Time of day: ${activityData.timeOfDay}
+        ${activityData.faceData ? `
+        - Face focus score: ${formatNumber(activityData.faceData.focusScore)}
+        - Face position - Yaw: ${formatNumber(activityData.faceData.yaw)}°
+        - Face position - Pitch: ${formatNumber(activityData.faceData.pitch)}°
+        ` : ''}
+        
+        ${activityData.faceData ? 'Please analyze both the input activity (keyboard/mouse) and face position data to provide a comprehensive assessment of focus and ergonomics.' : 'Please analyze the input activity data to assess focus patterns.'}
         `
       }
     ];

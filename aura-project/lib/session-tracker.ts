@@ -117,18 +117,76 @@ export class SessionTracker {
       
       const timeOfDay = this.getTimeOfDay(session.startTime);
       
-      // Get insights from Azure OpenAI
-      const aiResponse = await aiService.generateFocusInsights({
+      // Get latest focus data directly from the database
+      let focusStats = {
         keystrokes: this.keyCount,
         clicks: this.clickCount,
-        mouseMoved: this.mouseDistance,
+        mouseMoved: this.mouseDistance
+      };
+      
+      try {
+        // Get the most recent focus log directly from the database
+        const latestLog = await db.focusLog.findFirst({
+          where: { userId: session.userId },
+          orderBy: { timestamp: 'desc' }
+        });
+        
+        if (latestLog) {
+          // Use the latest log data instead of internal counters
+          focusStats = {
+            keystrokes: latestLog.keyboard || this.keyCount,
+            clicks: latestLog.mouseClicks || this.clickCount,
+            mouseMoved: latestLog.mouseDistance || this.mouseDistance
+          };
+        }
+      } catch (error) {
+        console.error("Error retrieving latest focus data:", error);
+      }
+      
+      // Get face data directly from the database
+      let faceData = null;
+      try {
+        // Query face logs for this session's time range
+        const faceLogs = await db.faceFocusLog.findMany({
+          where: {
+            userId: session.userId,
+            timestamp: {
+              gte: session.startTime,
+              lte: session.endTime || new Date()
+            }
+          },
+          orderBy: { timestamp: 'desc' },
+          take: 50
+        });
+        
+        if (faceLogs.length > 0) {
+          // Calculate average values from face logs
+          const avgFocusScore = faceLogs.reduce((sum: number, log: any) => sum + log.focusScore, 0) / faceLogs.length;
+          const avgYaw = faceLogs.reduce((sum: number, log: any) => sum + log.yaw, 0) / faceLogs.length;
+          const avgPitch = faceLogs.reduce((sum: number, log: any) => sum + log.pitch, 0) / faceLogs.length;
+          
+          faceData = {
+            focusScore: avgFocusScore,
+            yaw: avgYaw,
+            pitch: avgPitch
+          };
+        }
+      } catch (error) {
+        console.error("Error retrieving face data:", error);
+      }
+      
+      // Get insights with the latest data
+      const aiResponse = await aiService.generateFocusInsights({
+        keystrokes: focusStats.keystrokes,
+        clicks: focusStats.clicks,
+        mouseMoved: focusStats.mouseMoved,
         activeApps: session.activeApps,
         sessionDuration: duration,
-        timeOfDay
+        timeOfDay,
+        faceData: faceData
       });
       
-      // Skip database insertion for now to avoid schema mismatch issues
-      // Return the AI insights directly instead
+      // Return the AI insights
       return {
         analysis: aiResponse.analysis,
         tips: aiResponse.tips,
@@ -136,16 +194,6 @@ export class SessionTracker {
         focusScore: this.calculateFocusScore(),
         date: new Date()
       };
-      
-      // NOTE: Uncomment and fix this once the Prisma schema and TypeScript definitions are in sync
-      /*
-      const insight = await db.focusInsight.create({
-        data: {
-          // Add the correct fields based on your schema
-        }
-      });
-      return insight;
-      */
     } catch (error) {
       console.error("Failed to generate insights:", error);
       return null;

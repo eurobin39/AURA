@@ -10,27 +10,50 @@ interface FaceFocusLog {
 }
 
 // ✅ GET: 최근 20개의 얼굴 포커스 로그 조회
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
-    console.log("[FaceFocus GET] Session:", session); // 세션 확인
+    const userId = session?.id;
 
-    if (!session?.id) {
-      return NextResponse.json({ error: "Unauthorized: No active session" }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const logs = await db.faceFocusLog.findMany({
-      where: { userId: session.id },
-      orderBy: { timestamp: "desc" },
-      take: 20,
-    });
-    console.log("[FaceFocus GET] Retrieved logs:", logs); // 로그 조회 결과
+    // Get URL parameters for time filtering
+    const { searchParams } = new URL(request.url);
+    const sessionStart = searchParams.get('sessionStart');
+    const sessionEnd = searchParams.get('sessionEnd');
 
-    const responseData = Array.isArray(logs) ? logs : [];
-    return NextResponse.json(responseData, { status: 200 });
+    // Create where clause with time filters
+    const where: any = { userId };
+    
+    if (sessionStart || sessionEnd) {
+      where.timestamp = {};
+      
+      if (sessionStart) {
+        where.timestamp.gte = new Date(sessionStart);
+      }
+      
+      if (sessionEnd) {
+        where.timestamp.lte = new Date(sessionEnd);
+      }
+    }
+
+    // Query the database with filters
+    const faceLogs = await db.faceFocusLog.findMany({
+      where,
+      orderBy: { timestamp: 'desc' },
+      // Limit to most recent 50 records to avoid excessive data transfer
+      take: 50
+    });
+
+    return NextResponse.json(faceLogs);
   } catch (error) {
-    console.error("[FaceFocus GET] Failed to fetch logs:", error);
-    return NextResponse.json({ error: "Failed to fetch face focus logs" }, { status: 500 });
+    console.error('Error fetching face focus data:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch face focus data' },
+      { status: 500 }
+    );
   }
 }
 
