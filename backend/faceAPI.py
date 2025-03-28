@@ -6,24 +6,20 @@ import cv2
 from dotenv import load_dotenv
 import sys
 
-# User ID passed via CLI argument (default: 1)
+# User ID from CLI argument
 USER_ID = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 
-# Load environment variables from .env
+# Load environment variables
 load_dotenv()
 
 API_KEY = os.getenv("FACE_APIKEY")
 ENDPOINT = os.getenv("FACE_API_ENDPOINT")
-
-# Backend API endpoint
-BACKEND_URL = "https://aura-backend.onrender.com/api/face-focus"  # Next.js API address
+BACKEND_URL = "https://aura-frontend-62bh.onrender.com/api/face-focus"  # Next.js API
 face_api_url = f"{ENDPOINT}/face/v1.0/detect"
 
-# Azure Face API request headers and parameters
 headers = {"Ocp-Apim-Subscription-Key": API_KEY, "Content-Type": "application/octet-stream"}
 params = {"returnFaceAttributes": "headPose,blur,exposure,occlusion", "detectionModel": "detection_01"}
 
-# Analyze face using Azure Face API
 def analyze_face(image_path):
     try:
         with open(image_path, "rb") as image_file:
@@ -38,10 +34,8 @@ def analyze_face(image_path):
         print(f"❌ Error: {str(e)}")
         return None
 
-# Previous head position memory
 previous_yaw, previous_pitch = None, None
 
-# Calculate focus score and send to backend
 def estimate_efficiency(faces, image_name=""):
     global previous_yaw, previous_pitch
 
@@ -85,19 +79,16 @@ def estimate_efficiency(faces, image_name=""):
     send_to_backend(data)
     return data
 
-# Send face focus data to backend
 def send_to_backend(data):
     try:
-        response = requests.post(f"{BACKEND_URL}/api/face-focus", json=data)
-
-        if response.status_code == 200:
+        response = requests.post(BACKEND_URL, json=data)
+        if response.status_code == 200 or response.status_code == 201:
             print("✅ Focus data successfully saved to DB")
         else:
             print(f"❌ Backend Error: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Failed to send to backend: {str(e)}")
 
-# Start webcam and process every Nth frame
 cap = cv2.VideoCapture(0)
 frame_skip = 300
 
@@ -106,9 +97,10 @@ if not cap.isOpened():
     exit()
 
 frame_count = 0
+stop_file = f"stop_{USER_ID}.txt"
 
 try:
-    while True:
+    while not os.path.exists(stop_file):  
         ret, frame = cap.read()
         if not ret:
             print("Failed to capture frame")
@@ -116,7 +108,7 @@ try:
 
         frame_count += 1
         if frame_count % frame_skip == 0:
-            image_path = "temp_frame.jpg"
+            image_path = f"temp_frame_{USER_ID}.jpg"
             cv2.imwrite(image_path, frame)
             print("\n🔍 Sending frame to Azure Face API...")
             faces = analyze_face(image_path)
@@ -128,3 +120,5 @@ try:
 finally:
     cap.release()
     cv2.destroyAllWindows()
+    if os.path.exists(stop_file):
+        os.remove(stop_file)
